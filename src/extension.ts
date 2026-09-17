@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { Backend, createBackend, requestId, Request } from './backend';
+import { Backend, createBackend, normalizeInsertion, requestId, Request } from './backend';
 
 const CAP = 6000;
 let enabled = true;
@@ -9,6 +9,9 @@ let configuring = false;
 let configurationRevision = 0;
 let output: vscode.OutputChannel;
 let status: vscode.StatusBarItem;
+let offered: { uri: string; line: number; character: number; text: string } | undefined;
+const suppressed = new Set<string>();
+const justAccepted = new Set<string>();
 
 function contextFor(document: vscode.TextDocument, position: vscode.Position, scope: string) {
   const text = document.getText(), offset = document.offsetAt(position);
@@ -39,6 +42,9 @@ async function debounce(token: vscode.CancellationToken): Promise<void> {
 class Provider implements vscode.InlineCompletionItemProvider {
   async provideInlineCompletionItems(document: vscode.TextDocument, position: vscode.Position, ctx: vscode.InlineCompletionContext, token: vscode.CancellationToken): Promise<vscode.InlineCompletionItem[]> {
     if (!enabled || configuring || token.isCancellationRequested || process.platform !== 'darwin' || vscode.env.remoteName || vscode.env.uiKind === vscode.UIKind.Web || isCredential(document)) return [];
+    const automatic = ctx.triggerKind === vscode.InlineCompletionTriggerKind.Automatic;
+    if (automatic && suppressed.has(`${document.uri.toString()}:${position.line}`)) return [];
+    if (automatic && /\b(?:javascript|typescript|javascriptreact|typescriptreact)\b/i.test(document.languageId) && document.lineAt(position.line).text.trimEnd().endsWith(';')) return [];
     const mine = ++generation, version = document.version;
     backend.cancel();
     if (ctx.triggerKind === vscode.InlineCompletionTriggerKind.Automatic) await debounce(token);
@@ -56,8 +62,11 @@ class Provider implements vscode.InlineCompletionItemProvider {
         status.tooltip = result.reason;
         return [];
       }
+      const insertion = normalizeInsertion(result.insertText!, request.before, request.after);
+      if (!insertion) { status.text = label(); return []; }
       status.text = label(); status.tooltip = undefined;
-      return [new vscode.InlineCompletionItem(result.insertText!, new vscode.Range(position, position))];
+      offered = { uri: document.uri.toString(), line, character, text: insertion };
+      return [new vscode.InlineCompletionItem(insertion, new vscode.Range(position, position))];
     } finally { listener.dispose(); }
   }
 }
@@ -76,11 +85,19 @@ export function activate(context: vscode.ExtensionContext): void {
     configuring = false; status.text = label(); status.show();
   };
   void configure();
+  const changeListener = vscode.workspace.onDidChangeTextDocument(e => {
+    if (offered && e.document.uri.toString() === offered.uri) {
+      const accepted = e.contentChanges.some(c => c.range.start.line === offered!.line && c.range.start.character === offered!.character && c.text === offered!.text);
+      if (accepted) { const key=`${offered.uri}:${offered.line}`; suppressed.add(key); justAccepted.add(key); } else suppressed.clear();
+      offered = undefined;
+    } else if (justAccepted.size) { justAccepted.clear(); suppressed.clear(); }
+    invalidate();
+  });
   context.subscriptions.push(
     vscode.languages.registerInlineCompletionItemProvider([{ scheme: 'file' }, { scheme: 'untitled' }], new Provider()),
     vscode.window.onDidChangeActiveTextEditor(invalidate),
     vscode.window.onDidChangeTextEditorSelection(invalidate),
-    vscode.workspace.onDidChangeTextDocument(invalidate),
+    changeListener,
     vscode.workspace.onDidChangeConfiguration(e => { if (e.affectsConfiguration('appleFm')) void configure(); }),
     vscode.commands.registerCommand('appleFm.enable', () => { enabled = true; invalidate(); return vscode.workspace.getConfiguration('appleFm').update('enabled', true, vscode.ConfigurationTarget.Global); }),
     vscode.commands.registerCommand('appleFm.disable', () => { enabled = false; invalidate(); return vscode.workspace.getConfiguration('appleFm').update('enabled', false, vscode.ConfigurationTarget.Global); }),

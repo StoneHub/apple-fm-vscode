@@ -7,6 +7,14 @@ export function clean(text: string): string {
   const value = text.replace(/^```(?:\w+)?\r?\n/, '').replace(/\r?\n```\s*$/, '').replace(/\r/g, '');
   return !value || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value) ? '' : value;
 }
+export function normalizeInsertion(text: string, before: string, after: string): string {
+  let value = clean(text);
+  if (before.length > 0 && !/^\s+$/.test(before) && value.startsWith(before)) value = value.slice(before.length);
+  const linePrefix = before.slice(before.lastIndexOf('\n') + 1);
+  if (linePrefix.length > 0 && !/^\s*$/.test(linePrefix) && value.startsWith(linePrefix)) value = value.slice(linePrefix.length);
+  if (after.length > 0 && value.endsWith(after)) value = value.slice(0, -after.length);
+  return value;
+}
 export class ProcessBackend implements Backend {
   private child?: ChildProcessWithoutNullStreams; private closePromise?: Promise<void>;
   private generation = 0;
@@ -29,7 +37,7 @@ export class ProcessBackend implements Backend {
     const mine = this.generation;
     await this.closePromise;
     if (mine !== this.generation || signal?.aborted) return { id: request.id, status: 'cancelled' };
-    const prompt = ['Complete only the missing code at the cursor. Return only the insertion text; do not repeat the supplied prefix or suffix, add Markdown, explanations, or instructions.', `Language: ${request.language}`, `Text before cursor:\n${request.before}`, `Text after cursor:\n${request.after}`, request.context ? `Context:\n${request.context}` : ''].filter(Boolean).join('\n\n');
+    const prompt = ['Task: complete only the missing insertion at the clearly marked <CURSOR>. Return only text to insert at <CURSOR>; do not repeat the supplied prefix or suffix, add Markdown, explanations, or instructions.', `Language: ${request.language}`, `Text before <CURSOR>:\n${request.before}`, `<CURSOR>\nText after <CURSOR>:\n${request.after}`, request.context ? `Bounded context:\n${request.context}` : ''].filter(Boolean).join('\n\n');
     const child = spawn(this.executable, this.args, { stdio: ['pipe','pipe','pipe'] }); this.child = child; let out=''; let err=''; let settled=false; let resolveClose!:()=>void;
     this.closePromise = new Promise(resolve => { resolveClose=resolve; });
     return new Promise(resolve => {

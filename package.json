@@ -2,7 +2,7 @@
   "name": "apple-fm-inline-completion",
   "displayName": "Apple FM Inline Completion",
   "description": "Inline suggestions powered by the Apple model on your Mac.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "local",
   "license": "MIT",
   "engines": {

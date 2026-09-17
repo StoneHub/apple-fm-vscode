@@ -73,6 +73,7 @@ class Provider implements vscode.InlineCompletionItemProvider {
 export function activate(context: vscode.ExtensionContext): void {
   output = vscode.window.createOutputChannel('Apple FM');
   status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
+  status.command = 'appleFm.showMenu'; status.tooltip = 'Apple FM status and options';
   const configure = async () => {
     const mine = ++configurationRevision;
     generation++;
@@ -93,6 +94,20 @@ export function activate(context: vscode.ExtensionContext): void {
     } else if (justAccepted.size) { justAccepted.clear(); suppressed.clear(); }
     invalidate();
   });
+  const showMenu = vscode.commands.registerCommand('appleFm.showMenu', async () => {
+    const d = (backend as Backend & { diagnostics?: () => { argv:string[]; stdin:string; status?:string; inputChars:number; outputChars?:number; reason?:string } }).diagnostics?.();
+    const pick = await vscode.window.showQuickPick([
+      { label: enabled ? '$(debug-pause) Disable Apple FM' : '$(play) Enable Apple FM', description: '', action: enabled ? 'disable' : 'enable' },
+      { label: '$(symbol-misc) Backend and context settings', description: `${vscode.workspace.getConfiguration('appleFm').get('backend','fm')} · ${vscode.workspace.getConfiguration('appleFm').get('contextScope','nearby')}`, action: 'settings' },
+      { label: '$(info) Show last request', description: d ? `${d.status ?? 'running'} · ${d.inputChars} input chars · ${d.outputChars ?? 0} output chars` : 'No request yet', action: 'request' },
+      { label: '$(warning) Inline providers may compete', description: 'Open VS Code inline suggestion settings', action: 'providers' }
+    ]);
+    if (!pick) return;
+    if (pick.action === 'disable' || pick.action === 'enable') await vscode.commands.executeCommand(`appleFm.${pick.action}`);
+    else if (pick.action === 'settings') await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:local.apple-fm-inline-completion appleFm');
+    else if (pick.action === 'providers') await vscode.commands.executeCommand('workbench.action.openSettings', 'editor.inlineSuggest');
+    else if (pick.action === 'request' && d) { const doc = await vscode.workspace.openTextDocument({ content: `argv: ${JSON.stringify(d.argv)}\nstatus: ${d.status ?? 'running'}\ninputChars: ${d.inputChars}\noutputChars: ${d.outputChars ?? 0}\nreason: ${d.reason ?? ''}\n\n--- submitted stdin ---\n${d.stdin}`, language: 'text' }); await vscode.window.showTextDocument(doc, { preview: true }); }
+  });
   context.subscriptions.push(
     vscode.languages.registerInlineCompletionItemProvider([{ scheme: 'file' }, { scheme: 'untitled' }], new Provider()),
     vscode.window.onDidChangeActiveTextEditor(invalidate),
@@ -101,7 +116,7 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration(e => { if (e.affectsConfiguration('appleFm')) void configure(); }),
     vscode.commands.registerCommand('appleFm.enable', () => { enabled = true; invalidate(); return vscode.workspace.getConfiguration('appleFm').update('enabled', true, vscode.ConfigurationTarget.Global); }),
     vscode.commands.registerCommand('appleFm.disable', () => { enabled = false; invalidate(); return vscode.workspace.getConfiguration('appleFm').update('enabled', false, vscode.ConfigurationTarget.Global); }),
-    vscode.commands.registerCommand('appleFm.requestSuggestion', () => vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')),
+    vscode.commands.registerCommand('appleFm.requestSuggestion', () => vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')), showMenu,
     status, output
   );
 }

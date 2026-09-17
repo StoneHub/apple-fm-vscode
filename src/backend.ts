@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 export type Request = { id: string; kind: 'editor'; language: string; before: string; after: string; context?: string };
 export type Result = { id: string; status: 'ok'|'empty'|'unavailable'|'cancelled'|'error'; insertText?: string; reason?: string };
 export interface Backend { run(request: Request, signal?: AbortSignal): Promise<Result>; cancel(): void; dispose(): Promise<void>; }
+export type Diagnostics = { argv: string[]; stdin: string; status?: string; reason?: string; durationMs?: number; inputChars: number; outputChars?: number };
 export function clean(text: string): string {
   const value = text.replace(/^```(?:\w+)?\r?\n/, '').replace(/\r?\n```\s*$/, '').replace(/\r/g, '');
   return !value || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value) ? '' : value;
@@ -18,6 +19,7 @@ export function normalizeInsertion(text: string, before: string, after: string):
 export class ProcessBackend implements Backend {
   private child?: ChildProcessWithoutNullStreams; private closePromise?: Promise<void>;
   private generation = 0;
+  private last?: Diagnostics;
   constructor(private readonly executable: string, private readonly args: string[], private readonly json = false) {}
   cancel(): void {
     this.generation++;
@@ -32,16 +34,18 @@ export class ProcessBackend implements Backend {
     child.once('close', () => clearTimeout(killTimer));
   }
   async dispose(): Promise<void> { this.cancel(); await this.closePromise; }
+  diagnostics(): Diagnostics | undefined { return this.last; }
   async run(request: Request, signal?: AbortSignal): Promise<Result> {
     this.cancel();
     const mine = this.generation;
     await this.closePromise;
     if (mine !== this.generation || signal?.aborted) return { id: request.id, status: 'cancelled' };
     const prompt = ['Task: complete only the missing insertion at the clearly marked <CURSOR>. Return only text to insert at <CURSOR>; do not repeat the supplied prefix or suffix, add Markdown, explanations, or instructions.', `Language: ${request.language}`, `Text before <CURSOR>:\n${request.before}`, `<CURSOR>\nText after <CURSOR>:\n${request.after}`, request.context ? `Bounded context:\n${request.context}` : ''].filter(Boolean).join('\n\n');
+    const stdin = this.json ? JSON.stringify(request) : prompt; const started = Date.now(); this.last = { argv: [this.executable, ...this.args], stdin, inputChars: stdin.length };
     const child = spawn(this.executable, this.args, { stdio: ['pipe','pipe','pipe'] }); this.child = child; let out=''; let err=''; let settled=false; let resolveClose!:()=>void;
     this.closePromise = new Promise(resolve => { resolveClose=resolve; });
     return new Promise(resolve => {
-      const finish = (r: Result) => { if (settled) return; settled=true; resolve(r); };
+      const finish = (r: Result) => { if (settled) return; settled=true; this.last={...this.last!,status:r.status,reason:r.reason,outputChars:out.length}; resolve(r); };
       const abort = () => { this.stop(child); finish({id:request.id,status:'cancelled'}); };
       const timer=setTimeout(() => { this.stop(child); finish({id:request.id,status:'error',reason:'Request timed out'}); },15000); signal?.addEventListener('abort',abort,{once:true});
       child.stdout.on('data',d=>out+=d.toString()); child.stderr.on('data',d=>err+=d.toString()); child.stdin.on('error',()=>{}); child.on('error',e=>finish({id:request.id,status:'error',reason:e.message.slice(0,160)}));
@@ -50,7 +54,7 @@ export class ProcessBackend implements Backend {
         const value=clean(out.endsWith('\n')?out.slice(0,-1):out); finish(value?{id:request.id,status:'ok',insertText:value}:{id:request.id,status:'empty'});
       });
       if (signal?.aborted) abort();
-      else child.stdin.end(this.json?JSON.stringify(request):prompt);
+      else child.stdin.end(stdin);
     });
   }
 }

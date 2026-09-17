@@ -28,6 +28,10 @@
       {
         "command": "appleFm.disable",
         "title": "Apple FM: Disable"
+      },
+      {
+        "command": "appleFm.showMenu",
+        "title": "Apple FM: Show Status"
       }
     ],
     "configuration": {

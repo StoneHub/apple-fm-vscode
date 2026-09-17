@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 export type Request = { id: string; kind: 'editor'; language: string; before: string; after: string; context?: string };
 export type Result = { id: string; status: 'ok'|'empty'|'unavailable'|'cancelled'|'error'; insertText?: string; reason?: string };
 export interface Backend { run(request: Request, signal?: AbortSignal): Promise<Result>; cancel(): void; dispose(): Promise<void>; diagnostics(): Diagnostics | undefined; }
-export type Diagnostics = { argv: string[]; stdin: string; backend: string; model: string; status?: string; reason?: string; durationMs?: number; inputChars: number; outputChars?: number };
+export type Diagnostics = { argv: string[]; stdin: string; backend: string; model: string; status?: string; reason?: string; durationMs?: number; inputChars: number; outputChars?: number; contextChars?: number; responseText?: string };
 export function clean(text: string): string {
   const value = text.replace(/^```(?:\w+)?\r?\n/, '').replace(/\r?\n```\s*$/, '').replace(/\r/g, '');
   return !value || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value) ? '' : value;
@@ -49,11 +49,11 @@ export class ProcessBackend implements Backend {
     await this.closePromise;
     if (mine !== this.generation || signal?.aborted) return { id: request.id, status: 'cancelled' };
     const prompt = ['Task: complete only the missing insertion at the clearly marked <CURSOR>. Return only text to insert at <CURSOR>; do not repeat the supplied prefix or suffix, add Markdown, explanations, or instructions.', `Language: ${request.language}`, `Text before <CURSOR>:\n${request.before}`, `<CURSOR>\nText after <CURSOR>:\n${request.after}`, request.context ? `Bounded context:\n${request.context}` : ''].filter(Boolean).join('\n\n');
-    const stdin = this.json ? JSON.stringify(request) : prompt; const started = Date.now(); this.last = { argv: [this.executable, ...this.args], stdin, backend: this.json ? 'Swift' : 'CLI', model: 'system · on-device Apple Foundation Model', inputChars: stdin.length };
+    const stdin = this.json ? JSON.stringify(request) : prompt; const started = Date.now(); this.last = { argv: [this.executable, ...this.args], stdin, backend: this.json ? 'Swift' : 'CLI', model: 'system · on-device Apple Foundation Model', inputChars: stdin.length, contextChars: request.before.length + request.after.length };
     const child = spawn(this.executable, this.args, { stdio: ['pipe','pipe','pipe'] }); this.child = child; let out=''; let err=''; let settled=false; let resolveClose!:()=>void;
     this.closePromise = new Promise(resolve => { resolveClose=resolve; });
     return new Promise(resolve => {
-      const finish = (r: Result) => { if (settled) return; settled=true; this.last={...this.last!,status:r.status,reason:r.reason,durationMs:Date.now()-started,outputChars:out.length}; resolve(r); };
+      const finish = (r: Result) => { if (settled) return; settled=true; this.last={...this.last!,status:r.status,reason:r.reason,durationMs:Date.now()-started,outputChars:out.length,responseText:this.json ? undefined : out}; resolve(r); };
       const abort = () => { this.stop(child); finish({id:request.id,status:'cancelled'}); };
       const timer=setTimeout(() => { this.stop(child); finish({id:request.id,status:'error',reason:'Request timed out'}); },15000); signal?.addEventListener('abort',abort,{once:true});
       child.stdout.on('data',d=>out+=d.toString()); child.stderr.on('data',d=>err+=d.toString()); child.stdin.on('error',()=>{}); child.on('error',e=>finish({id:request.id,status:'error',reason:e.message.slice(0,160)}));

@@ -1,4 +1,7 @@
 import * as vscode from 'vscode';
+import { ModelMeter } from './modelMeter';
+import { RefactorOverlay } from './refactorOverlay';
+import { RefactorController } from './refactor';
 import { StatusView } from './statusView';
 import { Backend, createBackend, normalizeInsertion, requestId, Request } from './backend';
 
@@ -17,7 +20,10 @@ let lastAutomaticRequest = '';
 let acceptedDecoration: vscode.TextEditorDecorationType;
 let acceptedTimer: ReturnType<typeof setTimeout> | undefined;
 let panel: StatusView | undefined;
-function refreshPanel() { panel?.update(); }
+let refactor: RefactorController;
+let refactorOverlay: RefactorOverlay | undefined;
+let modelMeter: ModelMeter;
+function refreshPanel() { panel?.update(); refactorOverlay?.update(); }
 
 function contextFor(document: vscode.TextDocument, position: vscode.Position, scope: string) {
   const text = document.getText(), offset = document.offsetAt(position);
@@ -47,7 +53,7 @@ async function debounce(token: vscode.CancellationToken): Promise<void> {
 }
 class Provider implements vscode.InlineCompletionItemProvider {
   async provideInlineCompletionItems(document: vscode.TextDocument, position: vscode.Position, ctx: vscode.InlineCompletionContext, token: vscode.CancellationToken): Promise<vscode.InlineCompletionItem[]> {
-    if (!enabled || configuring || token.isCancellationRequested || process.platform !== 'darwin' || vscode.env.remoteName || vscode.env.uiKind === vscode.UIKind.Web || isCredential(document)) return [];
+    if (refactor?.isGenerating || !vscode.window.activeTextEditor?.selection.isEmpty || !enabled || configuring || token.isCancellationRequested || process.platform !== 'darwin' || vscode.env.remoteName || vscode.env.uiKind === vscode.UIKind.Web || isCredential(document)) return [];
     const automatic = ctx.triggerKind === vscode.InlineCompletionTriggerKind.Automatic;
     if (automatic && !vscode.workspace.getConfiguration('appleFm').get('automaticSuggestions', true)) return [];
     if (automatic && suppressed.has(`${document.uri.toString()}:${position.line}`)) return [];
@@ -92,12 +98,29 @@ export function activate(context: vscode.ExtensionContext): void {
     gutterIconPath: vscode.Uri.joinPath(context.extensionUri, 'media', 'accepted.svg'), gutterIconSize: 'contain'
   });
   status.command = 'appleFm.statusView.focus'; status.tooltip = 'Open Apple FM controls and latest request';
-  panel = new StatusView(context.extension.packageJSON.version, () => {
+  modelMeter = new ModelMeter(`${context.extensionPath}/bin/apple-fm-info`, refreshPanel);
+  context.subscriptions.push(modelMeter);
+  refactor = new RefactorController(refreshPanel, async () => { invalidate(); await backend?.dispose(); });
+  refactorOverlay = new RefactorOverlay(refactor);
+  context.subscriptions.push(refactor, refactorOverlay);
+  panel = new StatusView(() => {
     const cfg = vscode.workspace.getConfiguration('appleFm');
+    const refactorState = refactor.snapshot();
+    const diagnostics = refactorState.candidates[refactorState.selected]?.diagnostics ?? backend?.diagnostics();
+    modelMeter.observe(diagnostics);
     return { enabled, automatic: cfg.get('automaticSuggestions', true), backend: cfg.get('backend', 'fm'), scope: cfg.get('contextScope', 'nearby'),
-      phase: !enabled ? 'Paused' : status.text.includes('generating') ? 'Generating' : status.text.includes('accepted') ? 'Accepted' : status.text.includes('ready') ? 'Ready' : 'On', diagnostics: backend?.diagnostics() };
+      phase: !enabled ? 'Paused' : status.text.includes('generating') ? 'Generating' : status.text.includes('accepted') ? 'Accepted' : status.text.includes('ready') ? 'Ready' : 'On', diagnostics, refactor: refactorState, meter: modelMeter.state };
   });
+  context.subscriptions.push(vscode.commands.registerCommand('appleFm.refactorSelection', () => refactorOverlay?.start()));
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('appleFm.statusView', panel));
+  context.subscriptions.push(vscode.languages.registerCodeActionsProvider([{ scheme: 'file' }, { scheme: 'untitled' }], {
+    provideCodeActions(_document, range) {
+      if (range.isEmpty) return [];
+      const action = new vscode.CodeAction('Refactor with Apple FM', vscode.CodeActionKind.RefactorRewrite);
+      action.command = { command: 'appleFm.refactorSelection', title: 'Refactor with Apple FM' };
+      return [action];
+    }
+  }, { providedCodeActionKinds: [vscode.CodeActionKind.RefactorRewrite] }));
   const configure = async () => {
     const mine = ++configurationRevision;
     generation++;

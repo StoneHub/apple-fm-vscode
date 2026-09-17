@@ -9,3 +9,5 @@ fi
 mkdir -p "$root/bin"
 cp "$source_helper" "$root/bin/apple-fm-helper"
 chmod 755 "$root/bin/apple-fm-helper"
+
+xcrun swiftc -parse-as-library -O "$root/native/model-info.swift" -o "$root/bin/apple-fm-info"

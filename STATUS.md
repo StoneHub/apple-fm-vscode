@@ -12,6 +12,8 @@ The side panel retains compact controls, runtime context meter, and command/prom
 
 Reinstall with `code --install-extension apple-fm-inline-completion-0.1.6.vsix --force`. Reload the window, highlight code, and run Apple FM: Refactor Selection.
 
+The release prototype is for Apple Silicon Macs on macOS 27 or later. `bin/apple-fm-helper` reports a macOS 15 minimum; `bin/apple-fm-info` reports a macOS 27 minimum from `otool -l`. Public release artifacts are unsigned developer previews without notarization proof. `scripts/copy-swift-helper.sh` uses a sibling Swift build when available and otherwise retains the tracked helper, so a standalone clone can package without `/Users/monroe/Developer/GitRepos/FM/swift`.
+
 ## Earlier evidence, before the overlay change
 
 - TypeScript compile and focused normalization/refactor regressions passed for 0.1.4. Refactor fixtures cover no edits during generation/diff, duplicate labels, changed-source rejection, a focus race, nine-result bound, and apply once.

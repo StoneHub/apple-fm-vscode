@@ -34,13 +34,29 @@ See `MODEL_NOTES.md` for current model controls, the 64 GiB question, and realis
 npm install
 cd ../swift && swift build -c release && cd ../vscode
 npm run package
-code --install-extension apple-fm-inline-completion-0.1.6.vsix --force
+code --install-extension apple-fm-inline-completion-0.1.7.vsix --force
 ```
+
+### Install or update from a release
+
+On a Mac with Apple Silicon, install the latest public release with the same command for a first install or an update:
+
+```sh
+curl -fsSL https://github.com/StoneHub/apple-fm-vscode/releases/latest/download/install.sh | sh
+```
+
+The installer downloads the latest VSIX from the GitHub release, verifies its SHA-256 entry from `SHA256SUMS`, and runs the VS Code `code` CLI with `--force`. It does not enable automatic updates. Install VS Code's `code` shell command first if it is not already available; the installer also checks the standard macOS application paths. Reload the VS Code window after installation.
 
 For an already-open window, run **Developer: Reload Window** to load the installed update. The extension details page shows the installed version; reload the window to load that build.
 
 Commands: `Apple FM: Request Suggestion`, `Apple FM: Enable`, `Apple FM: Disable`, and `Apple FM: Open Control Panel`. Set `appleFm.backend` to `swift` for the bundled helper. The optional application-scoped `appleFm.swiftHelperPath` selects an absolute helper path.
 
-This package targets this Apple Silicon Mac. Local files and untitled documents work in trusted or Restricted Mode windows; remote and browser workspaces are excluded. Credential-like filenames are skipped.
+The package requires an Apple Silicon Mac running macOS 27 or later with Apple Foundation Models available. The bundled Swift request helper has a macOS 15 minimum, while the context meter helper is built with a macOS 27 minimum. Local files and untitled documents work in trusted or Restricted Mode windows; remote and browser workspaces are excluded. Credential-like filenames are skipped. Releases are unsigned developer previews; no notarization proof is provided.
 
 Remove with `code --uninstall-extension local.apple-fm-inline-completion`.
+
+To prepare a release locally, run `scripts/release.sh`; it writes the VSIX, installer, and `SHA256SUMS` to the ignored `release/` directory. After reviewing those artifacts, the publication command is:
+
+```sh
+gh release create "v$(node -p "require('./package.json').version")" release/* --target main --generate-notes
+```

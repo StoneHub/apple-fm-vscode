@@ -2,7 +2,7 @@
   "name": "apple-fm-inline-completion",
   "displayName": "Apple FM Inline Completion",
   "description": "Inline suggestions powered by the Apple model on your Mac.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "publisher": "local",
   "license": "MIT",
   "engines": {
@@ -31,7 +31,7 @@
       },
       {
         "command": "appleFm.showMenu",
-        "title": "Apple FM: Show Status"
+        "title": "Apple FM: Open Control Panel"
       }
     ],
     "configuration": {
@@ -65,8 +65,31 @@
           "default": "",
           "scope": "application",
           "description": "Optional absolute path to apple-fm-helper."
+        },
+        "appleFm.automaticSuggestions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Request suggestions while typing. Explicit requests remain available when this is off."
         }
       }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "appleFm",
+          "title": "Apple FM",
+          "icon": "media/applefm.svg"
+        }
+      ]
+    },
+    "views": {
+      "appleFm": [
+        {
+          "id": "appleFm.statusView",
+          "name": "Apple FM",
+          "type": "webview"
+        }
+      ]
     }
   },
   "scripts": {

@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { StatusView } from './statusView';
 import { Backend, createBackend, normalizeInsertion, requestId, Request } from './backend';
 
 const CAP = 6000;
@@ -12,6 +13,11 @@ let status: vscode.StatusBarItem;
 let offered: { uri: string; line: number; character: number; text: string } | undefined;
 const suppressed = new Set<string>();
 const justAccepted = new Set<string>();
+let lastAutomaticRequest = '';
+let acceptedDecoration: vscode.TextEditorDecorationType;
+let acceptedTimer: ReturnType<typeof setTimeout> | undefined;
+let panel: StatusView | undefined;
+function refreshPanel() { panel?.update(); }
 
 function contextFor(document: vscode.TextDocument, position: vscode.Position, scope: string) {
   const text = document.getText(), offset = document.offsetAt(position);
@@ -26,7 +32,7 @@ function isCredential(document: vscode.TextDocument) {
 function label() {
   return enabled ? `Apple FM · ${vscode.workspace.getConfiguration('appleFm').get('backend') === 'swift' ? 'Swift' : 'CLI'}` : 'Apple FM · disabled';
 }
-function invalidate() { generation++; backend?.cancel(); if (status) status.text = label(); }
+function invalidate() { generation++; backend?.cancel(); if (status) { status.text = label(); status.color = undefined; } refreshPanel(); }
 function current(document: vscode.TextDocument, position: vscode.Position, version: number) {
   const editor = vscode.window.activeTextEditor;
   return document.version === version && editor?.document === document && editor.selection.active.isEqual(position);
@@ -43,8 +49,11 @@ class Provider implements vscode.InlineCompletionItemProvider {
   async provideInlineCompletionItems(document: vscode.TextDocument, position: vscode.Position, ctx: vscode.InlineCompletionContext, token: vscode.CancellationToken): Promise<vscode.InlineCompletionItem[]> {
     if (!enabled || configuring || token.isCancellationRequested || process.platform !== 'darwin' || vscode.env.remoteName || vscode.env.uiKind === vscode.UIKind.Web || isCredential(document)) return [];
     const automatic = ctx.triggerKind === vscode.InlineCompletionTriggerKind.Automatic;
+    if (automatic && !vscode.workspace.getConfiguration('appleFm').get('automaticSuggestions', true)) return [];
     if (automatic && suppressed.has(`${document.uri.toString()}:${position.line}`)) return [];
     if (automatic && /\b(?:javascript|typescript|javascriptreact|typescriptreact)\b/i.test(document.languageId) && document.lineAt(position.line).text.trimEnd().endsWith(';')) return [];
+    const requestKey = `${document.uri}:${document.version}:${position.line}:${position.character}:${configurationRevision}`;
+    if (automatic && requestKey === lastAutomaticRequest) return [];
     const mine = ++generation, version = document.version;
     backend.cancel();
     if (ctx.triggerKind === vscode.InlineCompletionTriggerKind.Automatic) await debounce(token);
@@ -52,7 +61,8 @@ class Provider implements vscode.InlineCompletionItemProvider {
     const cfg = vscode.workspace.getConfiguration('appleFm');
     const controller = new AbortController();
     const listener = token.onCancellationRequested(() => controller.abort());
-    status.text = 'Apple FM · generating';
+    lastAutomaticRequest = requestKey;
+    status.text = '$(loading~spin) Apple FM · generating'; refreshPanel();
     const request: Request = { id: requestId(), kind: 'editor', language: document.languageId, ...contextFor(document, position, cfg.get('contextScope', 'nearby')) };
     try {
       const result = await backend.run(request, controller.signal);
@@ -64,16 +74,30 @@ class Provider implements vscode.InlineCompletionItemProvider {
       }
       const insertion = normalizeInsertion(result.insertText!, request.before, request.after);
       if (!insertion) { status.text = label(); return []; }
-      status.text = label(); status.tooltip = undefined;
+      status.text = '$(sparkle) Apple FM · ready';
+      status.color = new vscode.ThemeColor('charts.blue');
+      status.tooltip = 'Apple FM returned a suggestion. With multiple providers enabled, VS Code may display another provider. Click for request details.';
       offered = { uri: document.uri.toString(), line: position.line, character: position.character, text: insertion };
-      return [new vscode.InlineCompletionItem(insertion, new vscode.Range(position, position))];
-    } finally { listener.dispose(); }
+      return [new vscode.InlineCompletionItem(insertion, new vscode.Range(position, position), {
+        command: 'appleFm.accepted', title: 'Record Apple FM acceptance', arguments: [document.uri.toString(), position.line]
+      })];
+    } finally { listener.dispose(); refreshPanel(); }
   }
 }
 export function activate(context: vscode.ExtensionContext): void {
   output = vscode.window.createOutputChannel('Apple FM');
   status = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, 100);
-  status.command = 'appleFm.showMenu'; status.tooltip = 'Apple FM status and options';
+  status.name = 'Apple FM';
+  acceptedDecoration = vscode.window.createTextEditorDecorationType({
+    gutterIconPath: vscode.Uri.joinPath(context.extensionUri, 'media', 'accepted.svg'), gutterIconSize: 'contain'
+  });
+  status.command = 'appleFm.statusView.focus'; status.tooltip = 'Open Apple FM controls and latest request';
+  panel = new StatusView(context.extension.packageJSON.version, () => {
+    const cfg = vscode.workspace.getConfiguration('appleFm');
+    return { enabled, automatic: cfg.get('automaticSuggestions', true), backend: cfg.get('backend', 'fm'), scope: cfg.get('contextScope', 'nearby'),
+      phase: !enabled ? 'Paused' : status.text.includes('generating') ? 'Generating' : status.text.includes('accepted') ? 'Accepted' : status.text.includes('ready') ? 'Ready' : 'On', diagnostics: backend?.diagnostics() };
+  });
+  context.subscriptions.push(vscode.window.registerWebviewViewProvider('appleFm.statusView', panel));
   const configure = async () => {
     const mine = ++configurationRevision;
     generation++;
@@ -83,7 +107,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const cfg = vscode.workspace.getConfiguration('appleFm');
     enabled = cfg.get('enabled', true);
     backend = createBackend(cfg.get('backend', 'fm'), cfg.get<string>('swiftHelperPath', '') || `${context.extensionPath}/bin/apple-fm-helper`);
-    configuring = false; status.text = label(); status.show();
+    configuring = false; status.text = label(); status.show(); refreshPanel();
   };
   void configure();
   const changeListener = vscode.workspace.onDidChangeTextDocument(e => {
@@ -94,19 +118,23 @@ export function activate(context: vscode.ExtensionContext): void {
     } else if (justAccepted.size) { justAccepted.clear(); suppressed.clear(); }
     invalidate();
   });
-  const showMenu = vscode.commands.registerCommand('appleFm.showMenu', async () => {
-    const d = (backend as Backend & { diagnostics?: () => { argv:string[]; stdin:string; status?:string; inputChars:number; outputChars?:number; reason?:string } }).diagnostics?.();
-    const pick = await vscode.window.showQuickPick([
-      { label: enabled ? '$(debug-pause) Disable Apple FM' : '$(play) Enable Apple FM', description: '', action: enabled ? 'disable' : 'enable' },
-      { label: '$(symbol-misc) Backend and context settings', description: `${vscode.workspace.getConfiguration('appleFm').get('backend','fm')} · ${vscode.workspace.getConfiguration('appleFm').get('contextScope','nearby')}`, action: 'settings' },
-      { label: '$(info) Show last request', description: d ? `${d.status ?? 'running'} · ${d.inputChars} input chars · ${d.outputChars ?? 0} output chars` : 'No request yet', action: 'request' },
-      { label: '$(warning) Inline providers may compete', description: 'Open VS Code inline suggestion settings', action: 'providers' }
-    ]);
-    if (!pick) return;
-    if (pick.action === 'disable' || pick.action === 'enable') await vscode.commands.executeCommand(`appleFm.${pick.action}`);
-    else if (pick.action === 'settings') await vscode.commands.executeCommand('workbench.action.openSettings', '@ext:local.apple-fm-inline-completion appleFm');
-    else if (pick.action === 'providers') await vscode.commands.executeCommand('workbench.action.openSettings', 'editor.inlineSuggest');
-    else if (pick.action === 'request' && d) { const doc = await vscode.workspace.openTextDocument({ content: `argv: ${JSON.stringify(d.argv)}\nstatus: ${d.status ?? 'running'}\ninputChars: ${d.inputChars}\noutputChars: ${d.outputChars ?? 0}\nreason: ${d.reason ?? ''}\n\n--- submitted stdin ---\n${d.stdin}`, language: 'text' }); await vscode.window.showTextDocument(doc, { preview: true }); }
+  const showPanel = vscode.commands.registerCommand('appleFm.showMenu', () => vscode.commands.executeCommand('appleFm.statusView.focus'));
+  const acceptedCommand = vscode.commands.registerCommand('appleFm.accepted', (uri: string, line: number) => {
+    const editor = vscode.window.activeTextEditor;
+    if (!editor || editor.document.uri.toString() !== uri || line >= editor.document.lineCount) return;
+    suppressed.add(`${uri}:${line}`);
+    justAccepted.add(`${uri}:${line}`);
+    status.text = '$(check) Apple FM · accepted'; status.color = new vscode.ThemeColor('charts.green');
+    status.tooltip = 'This completion was accepted from Apple FM. Click for its prompt and timing.';
+    for (const visible of vscode.window.visibleTextEditors) visible.setDecorations(acceptedDecoration, []);
+    editor.setDecorations(acceptedDecoration, [{ range: new vscode.Range(line, 0, line, 0), hoverMessage: 'Accepted from Apple FM' }]);
+    refreshPanel();
+    if (acceptedTimer) clearTimeout(acceptedTimer);
+    acceptedTimer = setTimeout(() => {
+      editor.setDecorations(acceptedDecoration, []);
+      if (status.text.includes('accepted')) { status.text = label(); status.color = undefined; }
+      refreshPanel();
+    }, 1500);
   });
   context.subscriptions.push(
     vscode.languages.registerInlineCompletionItemProvider([{ scheme: 'file' }, { scheme: 'untitled' }], new Provider()),
@@ -116,8 +144,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.workspace.onDidChangeConfiguration(e => { if (e.affectsConfiguration('appleFm')) void configure(); }),
     vscode.commands.registerCommand('appleFm.enable', () => { enabled = true; invalidate(); return vscode.workspace.getConfiguration('appleFm').update('enabled', true, vscode.ConfigurationTarget.Global); }),
     vscode.commands.registerCommand('appleFm.disable', () => { enabled = false; invalidate(); return vscode.workspace.getConfiguration('appleFm').update('enabled', false, vscode.ConfigurationTarget.Global); }),
-    vscode.commands.registerCommand('appleFm.requestSuggestion', () => vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')), showMenu,
-    status, output
+    vscode.commands.registerCommand('appleFm.requestSuggestion', () => vscode.commands.executeCommand('editor.action.inlineSuggest.trigger')), showPanel,
+    acceptedCommand, acceptedDecoration, { dispose: () => { if (acceptedTimer) clearTimeout(acceptedTimer); } }, status, output
   );
 }
 export function deactivate(): void { generation++; configurationRevision++; void backend?.dispose(); }

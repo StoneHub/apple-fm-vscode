@@ -1,6 +1,16 @@
 # Apple FM Inline Completion
 
-An experimental VS Code inline completion provider using the on-device Apple Foundation Model through `/usr/bin/fm`. It reads the live unsaved document and cursor, and sends at most 6,000 characters of nearby or current-file context. Suggestions are plain insertion text and VS Code retains normal accept and dismiss behavior.
+Experimental inline completion using the on-device Apple Foundation Model on this Mac. Context comes from the live, unsaved document and is bounded to 6,000 characters. Tab accepts through VS Code's normal inline completion behavior; Escape dismisses. No branding is added to ghost text.
+
+## Try
+
+Click **Apple FM** in the status bar to open its side panel. Controls enable/pause the provider, toggle suggestions while typing, select CLI or Swift, and choose nearby or bounded current-file context. **Request suggestion** requests explicitly, including when automatic suggestions are off.
+
+The panel shows the latest request's model, executable/arguments, full submitted input, elapsed milliseconds, and input/output character counts. This is latest-request data held in memory, not saved history. Apple exposes the system model, not an exact model release identifier. Output counts describe raw backend output, before insertion normalization.
+
+The status bar spins while generating and turns blue when Apple FM returns a suggestion. A brief teal gutter dot confirms an accepted Apple FM suggestion. When several inline providers are enabled, VS Code selects the displayed preview: “ready” does not prove which provider is visible. The panel links to Copilot's inline settings; this extension does not disable other providers.
+
+Version 0.1.3 replaces the previous menu with the side panel, strips echoed line prefixes even when the model drops existing indentation, and suppresses repeated automatic requests at an unchanged cursor or immediately after acceptance on that line. Explicit requests remain available. Suggestions can still be semantically wrong; this is a local prototype.
 
 ## Build and install
 
@@ -8,11 +18,13 @@ An experimental VS Code inline completion provider using the on-device Apple Fou
 npm install
 cd ../swift && swift build -c release && cd ../vscode
 npm run package
-code --install-extension apple-fm-inline-completion-0.1.1.vsix
+code --install-extension apple-fm-inline-completion-0.1.3.vsix --force
 ```
 
-Use `Apple FM: Request Suggestion` from the Command Palette for an explicit request. `Apple FM: Enable` and `Apple FM: Disable` control the provider. The status bar identifies `Apple FM · CLI` or `Apple FM · Swift`. Set `appleFm.backend` to `swift` to use the bundled helper. An optional absolute `appleFm.swiftHelperPath` in user settings selects your own helper.
+For an already-open window, run **Developer: Reload Window** to load the installed update. The panel footer shows its running version.
 
-This first package targets this Apple Silicon Mac. Local files and untitled documents are supported. Remote workspaces and browser VS Code are excluded. Other inline providers can compete for the same preview; none are disabled by this extension.
+Commands: `Apple FM: Request Suggestion`, `Apple FM: Enable`, `Apple FM: Disable`, and `Apple FM: Open Control Panel`. Set `appleFm.backend` to `swift` for the bundled helper. The optional application-scoped `appleFm.swiftHelperPath` selects an absolute helper path.
+
+This package targets this Apple Silicon Mac. Local files and untitled documents work in trusted or Restricted Mode windows; remote and browser workspaces are excluded. Credential-like filenames are skipped.
 
 Remove with `code --uninstall-extension local.apple-fm-inline-completion`.

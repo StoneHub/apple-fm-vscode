@@ -2,29 +2,86 @@
   "name": "apple-fm-inline-completion",
   "displayName": "Apple FM Inline Completion",
   "description": "Inline suggestions powered by the Apple model on your Mac.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "local",
   "license": "MIT",
-  "engines": { "vscode": "^1.95.0" },
-  "categories": ["Other"],
-  "activationEvents": ["onStartupFinished"],
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
-      { "command": "appleFm.requestSuggestion", "title": "Apple FM: Request Suggestion" },
-      { "command": "appleFm.enable", "title": "Apple FM: Enable" },
-      { "command": "appleFm.disable", "title": "Apple FM: Disable" }
+      {
+        "command": "appleFm.requestSuggestion",
+        "title": "Apple FM: Request Suggestion"
+      },
+      {
+        "command": "appleFm.enable",
+        "title": "Apple FM: Enable"
+      },
+      {
+        "command": "appleFm.disable",
+        "title": "Apple FM: Disable"
+      }
     ],
     "configuration": {
       "title": "Apple FM",
       "properties": {
-        "appleFm.enabled": { "type": "boolean", "default": true, "description": "Enable Apple FM inline suggestions." },
-        "appleFm.backend": { "type": "string", "enum": ["fm", "swift"], "default": "fm", "description": "Explicit on-device backend." },
-        "appleFm.contextScope": { "type": "string", "enum": ["nearby", "currentFile"], "default": "nearby", "description": "Source context sent to the selected backend." },
-        "appleFm.swiftHelperPath": { "type": "string", "default": "", "scope": "application", "description": "Optional absolute path to apple-fm-helper." }
+        "appleFm.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Apple FM inline suggestions."
+        },
+        "appleFm.backend": {
+          "type": "string",
+          "enum": [
+            "fm",
+            "swift"
+          ],
+          "default": "fm",
+          "description": "Explicit on-device backend."
+        },
+        "appleFm.contextScope": {
+          "type": "string",
+          "enum": [
+            "nearby",
+            "currentFile"
+          ],
+          "default": "nearby",
+          "description": "Source context sent to the selected backend."
+        },
+        "appleFm.swiftHelperPath": {
+          "type": "string",
+          "default": "",
+          "scope": "application",
+          "description": "Optional absolute path to apple-fm-helper."
+        }
       }
     }
   },
-  "scripts": { "compile": "tsc -p ./", "copy-swift-helper": "./scripts/copy-swift-helper.sh", "package": "npm run compile && npm run copy-swift-helper && npx --yes @vscode/vsce package --no-dependencies" },
-  "devDependencies": { "@types/node": "^22.0.0", "@types/vscode": "^1.95.0", "@vscode/vsce": "^3.2.0", "typescript": "^5.7.0" }
+  "scripts": {
+    "compile": "tsc -p ./",
+    "copy-swift-helper": "./scripts/copy-swift-helper.sh",
+    "package": "npm run compile && npm run copy-swift-helper && npx --yes @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.95.0",
+    "@vscode/vsce": "^3.2.0",
+    "typescript": "^5.7.0"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true
+    },
+    "virtualWorkspaces": {
+      "supported": false
+    }
+  }
 }

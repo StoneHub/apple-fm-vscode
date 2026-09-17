@@ -8,7 +8,7 @@ An experimental VS Code inline completion provider using the on-device Apple Fou
 npm install
 cd ../swift && swift build -c release && cd ../vscode
 npm run package
-code --install-extension apple-fm-inline-completion-0.1.0.vsix
+code --install-extension apple-fm-inline-completion-0.1.1.vsix
 ```
 
 Use `Apple FM: Request Suggestion` from the Command Palette for an explicit request. `Apple FM: Enable` and `Apple FM: Disable` control the provider. The status bar identifies `Apple FM · CLI` or `Apple FM · Swift`. Set `appleFm.backend` to `swift` to use the bundled helper. An optional absolute `appleFm.swiftHelperPath` in user settings selects your own helper.

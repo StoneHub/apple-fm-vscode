@@ -25,6 +25,6 @@
       }
     }
   },
-  "scripts": { "compile": "tsc -p ./", "package": "npm run compile && npx --yes @vscode/vsce package --no-dependencies" },
+  "scripts": { "compile": "tsc -p ./", "copy-swift-helper": "./scripts/copy-swift-helper.sh", "package": "npm run compile && npm run copy-swift-helper && npx --yes @vscode/vsce package --no-dependencies" },
   "devDependencies": { "@types/node": "^22.0.0", "@types/vscode": "^1.95.0", "@vscode/vsce": "^3.2.0", "typescript": "^5.7.0" }
 }

@@ -65,7 +65,7 @@ class Provider implements vscode.InlineCompletionItemProvider {
       const insertion = normalizeInsertion(result.insertText!, request.before, request.after);
       if (!insertion) { status.text = label(); return []; }
       status.text = label(); status.tooltip = undefined;
-      offered = { uri: document.uri.toString(), line, character, text: insertion };
+      offered = { uri: document.uri.toString(), line: position.line, character: position.character, text: insertion };
       return [new vscode.InlineCompletionItem(insertion, new vscode.Range(position, position))];
     } finally { listener.dispose(); }
   }

@@ -2,6 +2,10 @@
 
 Experimental inline completion using the on-device Apple Foundation Model on this Mac. Context comes from the live, unsaved document and is bounded to 6,000 characters. Tab accepts through VS Code's normal inline completion behavior; Escape dismisses. No branding is added to ghost text.
 
+![Apple FM refactor alternatives inside the editor, with local model controls and context usage](docs/images/refactor.png)
+
+Browse generated refactors in place, alongside the local model controls and context meter.
+
 ## Try
 
 Click **Apple FM** in the status bar to open its side panel. Controls enable/pause the provider, toggle suggestions while typing, select CLI or Swift, and choose nearby or bounded current-file context. **Suggest** requests explicitly, including when automatic suggestions are off.

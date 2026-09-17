@@ -1,103 +1,99 @@
 import * as vscode from 'vscode';
 import { RefactorController } from './refactor';
 
-type AlternativeItem = vscode.QuickPickItem & { index: number };
-
+// Native editor-anchored UI. No Quick Pick or separate diff editor is involved.
 export class RefactorOverlay implements vscode.Disposable {
-  private picker?: vscode.QuickPick<AlternativeItem>;
-  private rendering = false;
+  private readonly comments = vscode.comments.createCommentController('apple-fm-refactor', 'Apple FM');
+  private thread?: vscode.CommentThread;
   private starting = false;
-  private readonly preview = { iconPath: new vscode.ThemeIcon('diff'), tooltip: 'Preview diff' };
-  private readonly apply = { iconPath: new vscode.ThemeIcon('check'), tooltip: 'Apply replacement' };
-  private readonly more = { iconPath: new vscode.ThemeIcon('add'), tooltip: 'Generate 3 more' };
-  private readonly stop = { iconPath: new vscode.ThemeIcon('debug-stop'), tooltip: 'Stop' };
-  private readonly edit = { iconPath: new vscode.ThemeIcon('edit'), tooltip: 'Change instruction' };
+  private showChanges = true;
+  private lastBody = '';
+  private readonly subscriptions: vscode.Disposable[] = [];
 
-  constructor(private readonly controller: RefactorController) {}
+  constructor(private readonly controller: RefactorController) {
+    this.comments.options = { prompt: 'Modify selected code', placeHolder: 'What should change?' };
+    const command = (name: string, action: (...args: any[]) => unknown) => {
+      this.subscriptions.push(vscode.commands.registerCommand(`appleFm.refactor.${name}`, async (...args) => {
+        try { await action(...args); } catch (error) { this.report(error); }
+      }));
+    };
+    command('generate', async (reply: vscode.CommentReply) => {
+      if (reply?.thread !== this.thread || this.controller.isGenerating) return;
+      await this.controller.generate(reply.text, 3);
+    });
+    command('previous', () => { const s = this.controller.snapshot(); this.controller.select(Math.max(0, s.selected - 1)); });
+    command('next', () => { const s = this.controller.snapshot(); this.controller.select(Math.min(s.candidates.length - 1, s.selected + 1)); });
+    command('more', () => this.controller.generate(this.controller.snapshot().instruction, 3));
+    command('toggleChanges', () => { this.showChanges = !this.showChanges; this.lastBody = ''; this.update(); });
+    command('apply', async () => { await this.controller.apply(); if (this.controller.snapshot().applied) this.close(); });
+    command('stop', () => this.controller.cancel());
+    command('close', () => this.close());
+  }
 
   async start(): Promise<void> {
     if (this.starting) return;
     this.starting = true;
     try {
-      this.picker?.hide();
+      this.close();
       await this.controller.capture();
-      await this.askInstruction();
+      const target = this.controller.target();
+      if (!target) return;
+      const editor = await vscode.window.showTextDocument(target.document, { preserveFocus: false });
+      // Attach just below the selection's first line, like an inline editing prompt.
+      const anchor = new vscode.Range(target.range.start.line, 0, target.range.start.line, 0);
+      this.thread = this.comments.createCommentThread(target.document.uri, anchor, []);
+      this.thread.label = 'Apple FM · Refactor';
+      this.thread.contextValue = 'appleFmReady';
+      this.thread.canReply = true;
+      this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Expanded;
+      this.showChanges = true; this.lastBody = '';
+      editor.revealRange(anchor, vscode.TextEditorRevealType.InCenterIfOutsideViewport);
+      this.update();
     } catch (error) { this.report(error); }
     finally { this.starting = false; }
   }
 
-  private async askInstruction(): Promise<void> {
-    const state = this.controller.snapshot();
-    const instruction = await vscode.window.showInputBox({
-      title: 'Refactor selection', prompt: state.target, placeHolder: 'What should change?',
-      value: state.instruction, ignoreFocusOut: true,
-      validateInput: value => !value.trim() ? 'Enter a change.' : value.length > 1000 ? 'Keep it under 1,000 characters.' : undefined
-    });
-    if (instruction === undefined) return;
-    this.show();
-    try { await this.controller.generate(instruction, 3); }
-    catch (error) { this.report(error); }
-  }
-
-  private show(): void {
-    const picker = vscode.window.createQuickPick<AlternativeItem>();
-    this.picker = picker;
-    picker.title = 'Refactor selection';
-    picker.ignoreFocusOut = true;
-    picker.matchOnDetail = true;
-    const subscriptions = [
-      picker.onDidAccept(() => {
-        const item = picker.selectedItems[0];
-        if (item) { this.controller.select(item.index); void this.controller.compare(true).catch(error => this.report(error)); }
-      }),
-      picker.onDidChangeActive(items => {
-        if (!this.rendering && items[0]) this.controller.select(items[0].index);
-      }),
-      picker.onDidTriggerItemButton(async event => {
-        this.controller.select(event.item.index);
-        try {
-          if (event.button === this.preview) await this.controller.compare(true);
-          else if (event.button === this.apply) {
-            await this.controller.apply();
-            if (this.controller.snapshot().applied) picker.hide();
-          }
-        } catch (error) { this.report(error); }
-      }),
-      picker.onDidTriggerButton(async button => {
-        try {
-          if (button === this.stop) this.controller.cancel();
-          else if (button === this.more) await this.controller.generate(this.controller.snapshot().instruction, 3);
-          else if (button === this.edit) { picker.hide(); await this.askInstruction(); }
-        } catch (error) { this.report(error); }
-      }),
-      picker.onDidHide(() => {
-        this.controller.cancel();
-        if (this.picker === picker) this.picker = undefined;
-        subscriptions.forEach(s => s.dispose()); picker.dispose();
-      })
-    ];
-    this.update(); picker.show();
-  }
-
   update(): void {
-    const picker = this.picker;
-    if (!picker || this.rendering) return;
+    if (!this.thread) return;
     const s = this.controller.snapshot();
-    this.rendering = true;
-    picker.busy = s.busy;
-    picker.placeholder = s.stale ? 'Source changed — select it again.' : s.busy || !s.candidates.length ? s.progress : 'Enter: preview · ✓: apply';
-    picker.title = `Refactor selection${s.candidates.length ? ` · ${s.candidates.length} alternatives` : ''}`;
-    picker.buttons = s.busy ? [this.stop] : s.stale ? [] : [this.edit, ...(s.candidates.length < 9 ? [this.more] : [])];
-    picker.items = s.candidates.map((c, index) => ({
-      index, label: `Alternative ${index + 1}`, alwaysShow: true,
-      description: [c.duplicate ? 'duplicate' : '', `${c.diagnostics.durationMs ?? 0} ms`].filter(Boolean).join(' · '),
-      detail: c.text.replace(/\s+/g, ' ').slice(0, 180),
-      buttons: s.busy || s.stale || s.applied ? [this.preview] : [this.preview, this.apply]
-    }));
-    if (picker.items[s.selected]) picker.activeItems = [picker.items[s.selected]];
-    this.rendering = false;
+    const candidate = s.candidates[s.selected];
+    this.thread.contextValue = s.stale ? 'appleFmStale' : s.busy ? 'appleFmBusy' : candidate ? 'appleFmResults' : 'appleFmReady';
+    this.thread.canReply = !s.busy && !s.stale;
+    this.thread.label = s.stale ? 'Apple FM · Selection changed' : s.busy ? `Apple FM · ${s.progress}` : candidate ? `Apple FM · ${s.selected + 1} / ${s.candidates.length}` : 'Apple FM · Refactor';
+    const body = new vscode.MarkdownString();
+    body.isTrusted = false; body.supportHtml = false;
+    if (s.stale) body.appendText('Select the code again to continue.');
+    else if (candidate) {
+      const language = this.controller.target()?.document.languageId ?? '';
+      body.appendCodeblock(this.showChanges ? selectionDiff(s.original ?? '', candidate.text) : candidate.text, this.showChanges ? 'diff' : language);
+    } else if (s.progress.startsWith('Generation failed:')) body.appendText(s.progress);
+    const key = `${body.value}:${s.selected}:${s.busy}:${s.stale}:${candidate?.duplicate}`;
+    if (key !== this.lastBody) {
+      this.lastBody = key;
+      this.thread.comments = body.value ? [{ body, mode: vscode.CommentMode.Preview,
+        author: { name: candidate ? `Alternative ${s.selected + 1}` : 'Apple FM' },
+        label: candidate?.duplicate ? 'duplicate' : undefined,
+        contextValue: 'appleFmAlternative' }] : [];
+    }
   }
 
+  private close(): void {
+    this.controller.cancel(); this.thread?.dispose(); this.thread = undefined; this.lastBody = '';
+  }
   private report(error: unknown): void { void vscode.window.showWarningMessage(error instanceof Error ? error.message : String(error)); }
-  dispose(): void { this.picker?.hide(); }
+  dispose(): void { this.close(); this.subscriptions.forEach(s => s.dispose()); this.comments.dispose(); }
+}
+
+export function selectionDiff(original: string, replacement: string): string {
+  if (original === replacement) return replacement;
+  const before = original.split('\n'), after = replacement.split('\n');
+  let start = 0, end = 0;
+  while (start < Math.min(before.length, after.length) && before[start] === after[start]) start++;
+  while (end < Math.min(before.length, after.length) - start && before[before.length - end - 1] === after[after.length - end - 1]) end++;
+  return [
+    ...before.slice(Math.max(0, start - 2), start).map(line => ` ${line}`),
+    ...before.slice(start, before.length - end).map(line => `-${line}`),
+    ...after.slice(start, after.length - end).map(line => `+${line}`),
+    ...after.slice(after.length - end, after.length - end + 2).map(line => ` ${line}`)
+  ].join('\n');
 }

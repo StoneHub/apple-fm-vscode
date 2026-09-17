@@ -49,6 +49,10 @@ export class RefactorController implements vscode.Disposable, vscode.TextDocumen
     ];
   }
 
+  target(): { document: vscode.TextDocument; range: vscode.Range } | undefined {
+    return this.session ? { document: this.session.document, range: this.session.range } : undefined;
+  }
+
   get isGenerating(): boolean { return !!this.abort; }
   private isLocal(doc: vscode.TextDocument): boolean { return ['file', 'untitled'].includes(doc.uri.scheme); }
   private stale(s: Session): boolean {

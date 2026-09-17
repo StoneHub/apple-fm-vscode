@@ -1,19 +1,16 @@
 # VS Code prototype status
 
-## Current checkpoint: 0.1.5 installed
+## Current checkpoint: 0.1.6 installed and running
 
-Monroe resumed installation. TypeScript compile, both focused regression scripts, and VSIX packaging passed. Version 0.1.5 is installed; installed JavaScript and both native helpers match the build. Existing windows still need Developer: Reload Window. The new overlay is ready for Monroe’s UI trial; no additional UI automation was performed during this installation.
+Selection refactoring now uses a native editor-anchored widget beneath the first selected line. Enter an instruction, Generate 3, browse alternatives with arrows, switch between changes and replacement, and Apply explicitly. The selection workflow opens no separate diff tabs. This uses the stable Comments API, not Copilot inline chat or its agent loop.
 
-Source changes prepared:
-- Removed provider-explanation paragraphs, Copilot settings link, version/model disclaimer footer, and most help prose.
-- Moved selection refactoring into a native Quick Input overlay: instruction, three alternatives, preview diff, explicit apply, more generations, stop, and edit instruction.
-- Added a selection Code Action for the native lightbulb. Right-click, Command Palette, and side-panel entry points share that overlay.
-- Kept the side panel for compact controls, runtime token meter, and expandable command/prompt diagnostics. Tab remains native inline acceptance.
-- Corrected a local-only README link that stopped the final 0.1.4 packaging attempt; that packaging retry is also deferred.
+TypeScript compile, focused regression scripts, and VSIX packaging passed. Installed JavaScript and both native helpers match the build (nine files verified). The existing VS Code window was reloaded into 0.1.6, preserving its unsaved source.
 
-Installed state: 0.1.5, with the compact panel and selection overlay. Running state depends on whether the existing window has been reloaded. Original demo/smoke unsaved work was preserved. The separate `fm-refactor-trial.js` window remains open; its apply test was undone.
+Live UI proof: the anchored prompt generated three alternatives; next changed 1/3 to 2/3; the view toggle showed syntax-highlighted replacement code in the same widget. No candidate was applied. The model changed behavior despite a preserve-behavior request, so these are reviewable drafts, not validated refactors. VS Code automatically opened its Comments panel on the first result; it was closed for the trial. The widget remains available in fm-refactor-trial.js.
 
-Reinstall with `code --install-extension apple-fm-inline-completion-0.1.5.vsix --force`. Reload the VS Code window, select code, then run Apple FM: Refactor Selection.
+The side panel retains compact controls, runtime context meter, and command/prompt diagnostics. Tab remains native autocomplete acceptance.
+
+Reinstall with `code --install-extension apple-fm-inline-completion-0.1.6.vsix --force`. Reload the window, highlight code, and run Apple FM: Refactor Selection.
 
 ## Earlier evidence, before the overlay change
 

@@ -2,7 +2,7 @@
   "name": "apple-fm-inline-completion",
   "displayName": "Apple FM Inline Completion",
   "description": "Inline suggestions powered by the Apple model on your Mac.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publisher": "local",
   "license": "MIT",
   "engines": {
@@ -36,6 +36,47 @@
       {
         "command": "appleFm.refactorSelection",
         "title": "Apple FM: Refactor Selection"
+      },
+      {
+        "command": "appleFm.refactor.generate",
+        "title": "Generate 3",
+        "icon": "$(sparkle)",
+        "enablement": "!commentIsEmpty"
+      },
+      {
+        "command": "appleFm.refactor.previous",
+        "title": "Previous alternative",
+        "icon": "$(chevron-left)"
+      },
+      {
+        "command": "appleFm.refactor.next",
+        "title": "Next alternative",
+        "icon": "$(chevron-right)"
+      },
+      {
+        "command": "appleFm.refactor.more",
+        "title": "Generate 3 more",
+        "icon": "$(add)"
+      },
+      {
+        "command": "appleFm.refactor.toggleChanges",
+        "title": "Toggle changes / replacement",
+        "icon": "$(diff)"
+      },
+      {
+        "command": "appleFm.refactor.apply",
+        "title": "Apply",
+        "icon": "$(check)"
+      },
+      {
+        "command": "appleFm.refactor.stop",
+        "title": "Stop",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "appleFm.refactor.close",
+        "title": "Close",
+        "icon": "$(close)"
       }
     ],
     "configuration": {
@@ -101,6 +142,84 @@
           "command": "appleFm.refactorSelection",
           "when": "editorHasSelection",
           "group": "1_modification"
+        }
+      ],
+      "comments/commentThread/context": [
+        {
+          "command": "appleFm.refactor.generate",
+          "group": "inline",
+          "when": "commentController == apple-fm-refactor && (commentThread == appleFmReady || commentThread == appleFmResults)"
+        }
+      ],
+      "comments/commentThread/title": [
+        {
+          "command": "appleFm.refactor.previous",
+          "group": "navigation@0",
+          "when": "commentController == apple-fm-refactor && (commentThread == appleFmResults || commentThread == appleFmBusy)"
+        },
+        {
+          "command": "appleFm.refactor.next",
+          "group": "navigation@1",
+          "when": "commentController == apple-fm-refactor && (commentThread == appleFmResults || commentThread == appleFmBusy)"
+        },
+        {
+          "command": "appleFm.refactor.toggleChanges",
+          "group": "navigation@2",
+          "when": "commentController == apple-fm-refactor && (commentThread == appleFmResults || commentThread == appleFmBusy)"
+        },
+        {
+          "command": "appleFm.refactor.more",
+          "group": "navigation@3",
+          "when": "commentController == apple-fm-refactor && commentThread == appleFmResults"
+        },
+        {
+          "command": "appleFm.refactor.apply",
+          "group": "navigation@4",
+          "when": "commentController == apple-fm-refactor && commentThread == appleFmResults"
+        },
+        {
+          "command": "appleFm.refactor.stop",
+          "group": "navigation@5",
+          "when": "commentController == apple-fm-refactor && commentThread == appleFmBusy"
+        },
+        {
+          "command": "appleFm.refactor.close",
+          "group": "navigation@6",
+          "when": "commentController == apple-fm-refactor"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "appleFm.refactor.generate",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.previous",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.next",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.more",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.toggleChanges",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.apply",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.stop",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.close",
+          "when": "false"
         }
       ]
     }

@@ -16,11 +16,11 @@ The earlier 0.1.3 update replaces the previous menu with the side panel, strips 
 
 Highlight code, then choose **Refactor with Apple FM** from the lightbulb, or **Apple FM: Refactor Selection** from the right-click menu or Command Palette. The side panel also has **Refactor selection…**.
 
-The native overlay asks what to change, then generates three alternatives. Select an alternative and press Enter or its diff button to preview it. Its checkmark applies only the captured selection. Native Undo restores the edit. If the source changes, capture it again before applying.
+A native widget opens directly below the selection's first line. Enter the change and click **Generate 3**. Alternatives and their changes appear inside the same widget. Its arrow buttons browse results; the diff button toggles between changes and replacement code; **Apply** replaces the captured selection. No diff tab is opened. Native Undo restores an applied edit.
 
-The overlay's plus button generates three more (up to nine retained). The pencil changes the instruction; changing it starts a fresh set. Stop/Escape cancels unfinished generation. Duplicate results are labeled. Selection size is capped at 6,000 characters and the instruction at 1,000. Alternatives remain in memory until a new selection or extension reload.
+The plus button generates three more (up to nine retained). A new instruction starts a fresh set. Stop cancels unfinished work; Close removes the widget. Source changes block applying old results. Selection size is capped at 6,000 characters and instructions at 1,000. Alternatives remain in memory for the session.
 
-Refactoring uses the on-device CLI with sampled generation. Inline completion remains independent and keeps native Tab acceptance. The refactor path currently uses CLI even when inline completion is set to Swift.
+This uses VS Code's stable editor-anchored comment widget as a local refactoring surface. It is not Copilot's inline chat agent: Apple FM requests go directly to the on-device CLI, without a Copilot tool loop. Tab autocomplete remains separate. Refactoring currently uses CLI even when inline completion is set to Swift.
 
 ## Context meter
 
@@ -34,7 +34,7 @@ See `MODEL_NOTES.md` for current model controls, the 64 GiB question, and realis
 npm install
 cd ../swift && swift build -c release && cd ../vscode
 npm run package
-code --install-extension apple-fm-inline-completion-0.1.5.vsix --force
+code --install-extension apple-fm-inline-completion-0.1.6.vsix --force
 ```
 
 For an already-open window, run **Developer: Reload Window** to load the installed update. The extension details page shows the installed version; reload the window to load that build.

@@ -1,8 +1,8 @@
 # VS Code prototype status
 
-## Current checkpoint: 0.1.5 source, verification deferred
+## Current checkpoint: 0.1.5 installed
 
-Monroe requested a batch of UX edits and explicitly asked to save testing until the edits are finished. No new compile, tests, packaging, installation, or UI checks were run after that instruction.
+Monroe resumed installation. TypeScript compile, both focused regression scripts, and VSIX packaging passed. Version 0.1.5 is installed; installed JavaScript and both native helpers match the build. Existing windows still need Developer: Reload Window. The new overlay is ready for Monroe’s UI trial; no additional UI automation was performed during this installation.
 
 Source changes prepared:
 - Removed provider-explanation paragraphs, Copilot settings link, version/model disclaimer footer, and most help prose.
@@ -11,9 +11,9 @@ Source changes prepared:
 - Kept the side panel for compact controls, runtime token meter, and expandable command/prompt diagnostics. Tab remains native inline acceptance.
 - Corrected a local-only README link that stopped the final 0.1.4 packaging attempt; that packaging retry is also deferred.
 
-Installed/running state: the earlier 0.1.4 trial build is installed. It still uses the larger side-panel refactor UI. It does not contain the pending 0.1.5 cleanup/overlay. Original demo/smoke unsaved work was preserved. The separate `fm-refactor-trial.js` window remains open; its apply test was undone.
+Installed state: 0.1.5, with the compact panel and selection overlay. Running state depends on whether the existing window has been reloaded. Original demo/smoke unsaved work was preserved. The separate `fm-refactor-trial.js` window remains open; its apply test was undone.
 
-When Monroe finishes sending edits: review the final source, compile, run the two existing focused regression scripts, package, install 0.1.5 (or next version), compare installed artifacts, and verify one overlay refactor flow in the disposable trial. No broad test expansion is requested. Use `npm run package` and `code --install-extension apple-fm-inline-completion-0.1.5.vsix --force`. Existing windows need Developer: Reload Window.
+Reinstall with `code --install-extension apple-fm-inline-completion-0.1.5.vsix --force`. Reload the VS Code window, select code, then run Apple FM: Refactor Selection.
 
 ## Earlier evidence, before the overlay change
 

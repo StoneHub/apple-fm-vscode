@@ -1,6 +1,6 @@
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-export type Request = { id: string; kind: 'editor'; language: string; before: string; after: string; context?: string };
+export type Request = { id: string; kind: 'editor'; language: string; before: string; after: string; context?: string; mode?: 'comment' };
 export type Result = { id: string; status: 'ok'|'empty'|'unavailable'|'cancelled'|'error'; insertText?: string; reason?: string };
 export interface Backend { run(request: Request, signal?: AbortSignal): Promise<Result>; cancel(): void; dispose(): Promise<void>; diagnostics(): Diagnostics | undefined; }
 export type Diagnostics = { argv: string[]; stdin: string; backend: string; model: string; status?: string; reason?: string; durationMs?: number; inputChars: number; outputChars?: number; contextChars?: number; responseText?: string };

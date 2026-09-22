@@ -4,6 +4,7 @@ import { RefactorOverlay } from './refactorOverlay';
 import { RefactorController } from './refactor';
 import { StatusView } from './statusView';
 import { Backend, createBackend, normalizeInsertion, requestId, Request } from './backend';
+import { commentInsertion, completionHint, MAX_COMMENT_LINES } from './comments';
 
 const CAP = 6000;
 let enabled = true;
@@ -25,12 +26,17 @@ let refactorOverlay: RefactorOverlay | undefined;
 let modelMeter: ModelMeter;
 function refreshPanel() { panel?.update(); refactorOverlay?.update(); }
 
-function contextFor(document: vscode.TextDocument, position: vscode.Position, scope: string) {
+function contextFor(document: vscode.TextDocument, position: vscode.Position, scope: string, cap = CAP) {
   const text = document.getText(), offset = document.offsetAt(position);
-  if (scope === 'currentFile' && text.length <= CAP) return { before: text.slice(0, offset), after: text.slice(offset) };
-  const start = scope === 'nearby' ? Math.max(0, offset - CAP / 2) : Math.max(0, Math.min(offset - CAP / 2, text.length - CAP));
+  if (scope === 'currentFile' && text.length <= cap) return { before: text.slice(0, offset), after: text.slice(offset) };
+  const start = scope === 'nearby' ? Math.max(0, offset - cap / 2) : Math.max(0, Math.min(offset - cap / 2, text.length - cap));
   if (scope === 'currentFile') output.appendLine(`currentFile context truncated (${text.length} chars)`);
-  return { before: text.slice(start, offset), after: text.slice(offset, start + CAP) };
+  return { before: text.slice(start, offset), after: text.slice(offset, start + cap) };
+}
+function hintFor(document: vscode.TextDocument, position: vscode.Position) {
+  const linesAbove = [];
+  for (let line = Math.max(0, position.line - MAX_COMMENT_LINES); line < position.line; line++) linesAbove.push(document.lineAt(line).text);
+  return completionHint(document.languageId, document.lineAt(position.line).text.slice(0, position.character), linesAbove);
 }
 function isCredential(document: vscode.TextDocument) {
   return /(^|\/)(\.env(?:\.[^/]+)?|[^/]+\.(?:pem|key|p12|pfx|secret|secrets)|id_rsa|id_ed25519|credentials)$/i.test(document.uri.fsPath);
@@ -69,7 +75,8 @@ class Provider implements vscode.InlineCompletionItemProvider {
     const listener = token.onCancellationRequested(() => controller.abort());
     lastAutomaticRequest = requestKey;
     status.text = '$(loading~spin) Apple FM · generating'; refreshPanel();
-    const request: Request = { id: requestId(), kind: 'editor', language: document.languageId, ...contextFor(document, position, cfg.get('contextScope', 'nearby')) };
+    const hint = hintFor(document, position);
+    const request: Request = { id: requestId(), kind: 'editor', language: document.languageId, ...contextFor(document, position, cfg.get('contextScope', 'nearby'), CAP - (hint.context?.length ?? 0)), context: hint.context, mode: hint.comment ? 'comment' : undefined };
     try {
       const result = await backend.run(request, controller.signal);
       if (mine !== generation || !enabled || token.isCancellationRequested || !current(document, position, version)) return [];
@@ -78,7 +85,8 @@ class Provider implements vscode.InlineCompletionItemProvider {
         status.tooltip = result.reason;
         return [];
       }
-      const insertion = normalizeInsertion(result.insertText!, request.before, request.after);
+      const normalized = normalizeInsertion(result.insertText!, request.before, request.after);
+      const insertion = hint.comment ? commentInsertion(normalized, document.lineAt(position.line).text.slice(0, position.character), document.languageId) : normalized;
       if (!insertion) { status.text = label(); return []; }
       status.text = '$(sparkle) Apple FM · ready';
       status.color = new vscode.ThemeColor('charts.blue');

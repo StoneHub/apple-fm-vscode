@@ -50,4 +50,16 @@ for (const [prefix, reply, want] of [['  const ', 'sum = a + b;\n  const avg = s
 }
 const crlf = 'class A\r\n  x = foo()\r\nend\r\n';
 assert.equal(finish('  x = foo(bar)', prepare(crlf, crlf.indexOf('foo(') + 4, 'ruby', 'nearby')), 'bar');
+// Window edges keep surrogate pairs whole, and a long comment above leaves room for code (#5).
+const lone = s => /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/.test(s);
+for (let offset = 6990; offset <= 7010; offset++) {
+  const r = prepare('b'.repeat(4000) + '😀'.repeat(20) + 'a'.repeat(4000), offset, 'ruby', 'nearby').request;
+  assert.ok(!lone(r.before) && !lone(r.after), `lone surrogate at offset ${offset}`);
+}
+const longComment = Array.from({ length: 20 }, (_, i) => `# ${String(i).padEnd(308, 'x')}`).join('\n');
+const big = 'x = 1\n'.repeat(1200) + longComment + '\n';
+const withIntent = prepare(big, big.length, 'ruby', 'nearby').request;
+assert.ok(withIntent.before.length > 2000, 'before keeps its half of the window');
+assert.ok(withIntent.context.length <= 1100, 'intent is capped');
+assert.ok(withIntent.before.length + withIntent.after.length + withIntent.context.length <= 6000, 'request fits the helper limit');
 console.log('shape regressions: PASS');

@@ -5,11 +5,16 @@ import { commentInsertion, completionHint, CompletionHint, MAX_COMMENT_LINES } f
 export const CAP = 6000;
 export type Prepared = { request: Request; hint: CompletionHint; linePrefix: string; lineSuffix: string };
 
+// Move window edges off the middle of a surrogate pair, so the request stays valid JSON for the Swift helper.
+const lowSurrogate = (text: string, i: number) => /[\uDC00-\uDFFF]/.test(text[i] ?? '');
 function contextFor(text: string, offset: number, scope: string, cap: number, note?: (message: string) => void) {
   if (scope === 'currentFile' && text.length <= cap) return { before: text.slice(0, offset), after: text.slice(offset) };
-  const start = scope === 'nearby' ? Math.max(0, offset - cap / 2) : Math.max(0, Math.min(offset - cap / 2, text.length - cap));
+  let start = scope === 'nearby' ? Math.max(0, offset - Math.floor(cap / 2)) : Math.max(0, Math.min(offset - Math.floor(cap / 2), text.length - cap));
+  let end = start + cap;
+  if (lowSurrogate(text, start)) start++;
+  if (lowSurrogate(text, end)) end--;
   if (scope === 'currentFile') note?.(`currentFile context truncated (${text.length} chars)`);
-  return { before: text.slice(start, offset), after: text.slice(offset, start + cap) };
+  return { before: text.slice(start, offset), after: text.slice(offset, end) };
 }
 export function prepare(text: string, offset: number, language: string, scope: string, note?: (message: string) => void): Prepared {
   const lineStart = text.lastIndexOf('\n', offset - 1) + 1, lineEnd = text.indexOf('\n', offset);

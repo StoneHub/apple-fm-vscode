@@ -7,6 +7,8 @@ add('--', 'sql lua haskell elm');
 add(';', 'clojure lisp scheme ini');
 add('%', 'latex tex erlang matlab');
 export const MAX_COMMENT_LINES = 20;
+// The comment sent as intent stays small so the code around the cursor keeps most of the 6000-character window.
+const MAX_INTENT_CHARS = 1000;
 const INTERPOLATES = new Set(['ruby', 'elixir', 'crystal', 'coffeescript']);
 
 // # and % start a comment only at the start of a word, which rules out $#, ${#x}, a/#b, \% and interpolation like #{x}.
@@ -41,7 +43,12 @@ export function completionHint(language: string, linePrefix: string, linesAbove:
   if (commentStart(linePrefix, language) >= 0)
     return { comment: true, context: `The cursor is inside a ${language} comment. Continue only the comment's text on this line. Do not write code.` };
   const block: string[] = [];
-  for (let i = linesAbove.length - 1; i >= 0 && block.length < MAX_COMMENT_LINES && commentOnly(linesAbove[i], language); i--) block.unshift(linesAbove[i].trim());
+  let chars = 0;
+  for (let i = linesAbove.length - 1; i >= 0 && block.length < MAX_COMMENT_LINES && commentOnly(linesAbove[i], language); i--) {
+    const line = linesAbove[i].trim();
+    if (chars + line.length > MAX_INTENT_CHARS) break;
+    block.unshift(line); chars += line.length + 1;
+  }
   return block.length ? { comment: false, context: `The comment directly above the cursor describes the code to write next:\n${block.join('\n')}` } : { comment: false };
 }
 // Keep a comment suggestion to the rest of the current line, without a repeated comment marker.

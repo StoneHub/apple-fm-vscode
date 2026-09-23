@@ -26,4 +26,19 @@ assert.equal(commentInsertion('# Returns the full name', '  # Returns the ', 'ru
 assert.equal(commentInsertion('Returns the full name', '  # Returns the ', 'ruby'), 'full name');
 assert.equal(commentInsertion('the full name of the user', '  # Returns the ', 'ruby'), 'full name of the user');
 assert.equal(commentInsertion('theme colors', '  # Returns the ', 'ruby'), 'theme colors');
+// # and % start a comment only at the start of a word (#3).
+for (const [language, line] of [['shellscript', 'if [ $# -eq 0 ]; then '], ['shellscript', '(( ${#x} > 1 )) '], ['shellscript', 'n=${v##*/}'],
+  ['ruby', 'label = "#{name}#{c > 1 ? " (x#{c})" : ""}" '], ['yaml', 'url: http://x/#top'], ['php', '#[Route("/users")] '], ['latex', 'costs 50\\% more ']]) {
+  assert.equal(commentStart(line, language), -1, `${language}: ${line}`);
+}
+assert.equal(commentStart('x = 1  # note', 'python'), 7);
+assert.equal(commentStart('ls -la # list', 'shellscript'), 7);
+assert.equal(commentStart('echo hi;# done', 'shellscript'), 8);
+assert.equal(commentStart('% a latex comment', 'latex'), 0);
+
+// Mid-word cursor and doubled markers (#4).
+assert.equal(commentInsertion('Returns the full name', '  # Returns the fu', 'ruby'), 'll name');
+assert.equal(commentInsertion('full name', '  # Returns the fu', 'ruby'), 'll name');
+assert.equal(commentInsertion('/// full name', '/// Returns the ', 'swift'), 'full name');
+assert.equal(commentInsertion('## full name', '## Returns the ', 'ruby'), 'full name');
 console.log('comment regressions: PASS');

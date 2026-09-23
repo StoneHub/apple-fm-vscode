@@ -7,6 +7,15 @@ add('--', 'sql lua haskell elm');
 add(';', 'clojure lisp scheme ini');
 add('%', 'latex tex erlang matlab');
 export const MAX_COMMENT_LINES = 20;
+const INTERPOLATES = new Set(['ruby', 'elixir', 'crystal', 'coffeescript']);
+
+// # and % start a comment only at the start of a word, which rules out $#, ${#x}, a/#b, \% and interpolation like #{x}.
+function startsComment(line: string, i: number, marker: string, language: string) {
+  if (marker !== '#' && marker !== '%') return true;
+  if (i > 0 && !/[\s;&|()<>]/.test(line[i - 1])) return false;
+  if (marker === '#' && line[i + 1] === '{' && INTERPOLATES.has(language)) return false;
+  return !(language === 'php' && line[i + 1] === '[');
+}
 
 // Index where a line comment starts outside string literals, or -1.
 export function commentStart(line: string, language: string): number {
@@ -18,7 +27,7 @@ export function commentStart(line: string, language: string): number {
     if (quote) { if (ch === '\\') i++; else if (ch === quote) quote = ''; continue; }
     if (ch === '"' || ch === "'" || ch === '`') { quote = ch; continue; }
     const marker = own.find(m => line.startsWith(m, i));
-    if (marker) return i;
+    if (marker && startsComment(line, i, marker, language)) return i;
   }
   return -1;
 }
@@ -38,16 +47,20 @@ export function completionHint(language: string, linePrefix: string, linesAbove:
 // Keep a comment suggestion to the rest of the current line, without a repeated comment marker.
 export function commentInsertion(text: string, linePrefix: string, language: string): string {
   let value = text.split('\n')[0];
-  const own = markers[language] ?? [];
-  const marker = own.find(m => value.trimStart().startsWith(`${m} `) || value.trim() === m);
+  const start = commentStart(linePrefix, language);
+  // The typed marker run, e.g. ///, ## or ;;, so a restated one is stripped whole.
+  const run = start < 0 ? '' : linePrefix.slice(start).match(/^([^\s\w])\1*/)?.[0] ?? '';
+  const marker = [run, ...(markers[language] ?? [])].filter(Boolean).sort((a, b) => b.length - a.length)
+    .find(m => value.trimStart().startsWith(`${m} `) || value.trim() === m);
   if (marker) value = value.trimStart().slice(marker.length);
   // The model often restates some or all of the typed comment, so drop words that overlap its ending.
-  const start = commentStart(linePrefix, language);
-  const typed = start < 0 ? [] : linePrefix.slice(start + (own.find(m => linePrefix.startsWith(m, start))?.length ?? 0)).trim().split(/\s+/).filter(Boolean);
-  for (let n = typed.length; n > 0; n--) {
+  // Mid-word, the last typed word may continue into the reply (fu + full -> ll).
+  const midWord = !/\s$/.test(linePrefix);
+  const typed = linePrefix.slice(start + run.length).trim().split(/\s+/).filter(Boolean);
+  for (let n = start < 0 ? 0 : typed.length; n > 0; n--) {
     const tail = typed.slice(-n).join(' '), rest = value.trimStart();
-    if (rest.startsWith(tail) && !/^[\p{L}\p{N}_]/u.test(rest.slice(tail.length))) { value = rest.slice(tail.length); break; }
+    if (rest.startsWith(tail) && (midWord || !/^[\p{L}\p{N}_]/u.test(rest.slice(tail.length)))) { value = rest.slice(tail.length); break; }
   }
-  if (/\s$/.test(linePrefix)) value = value.trimStart();
+  if (!midWord) value = value.trimStart();
   return value.trimEnd();
 }

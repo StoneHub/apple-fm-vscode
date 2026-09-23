@@ -28,7 +28,7 @@ const indentOf = (line: string) => line.match(/^[ \t]*/)![0].length;
 const OPENS_BLOCK = /([:{([]|\bdo(\s*\|[^|]*\|)?|\bthen)\s*$|^\s*(def|class|module|if|unless|while|until|for|case|begin|function|fn|func|struct|enum)\b/;
 const END_LANGUAGES = new Set(['ruby', 'elixir', 'crystal', 'lua']);
 const OPENS_END = /^\s*(def|class|module|if|unless|while|until|case|begin|for)\b|\bdo(\s*\|[^|]*\|)?\s*$/;
-export type ShapeContext = { before?: string; language?: string };
+export type ShapeContext = { before?: string; after?: string; language?: string };
 
 // True when the line repeats one of the non-empty lines above the cursor.
 function restated(line: string, before: string) {
@@ -47,6 +47,15 @@ function dropRestated(lines: string[], before: string): string[] {
   for (let k = Math.min(lines.length - 1, above.length); k > 0; k--) {
     const head = lines.slice(0, k).map(line => line.trim());
     if (head.join('').length >= 4 && head.every((line, i) => line === above[above.length - k + i])) return lines.slice(k);
+  }
+  return lines;
+}
+// Drop trailing lines that repeat the code right below the cursor. Closer lines are left to dropExtraClosers, since a new block legitimately ends with the same end or } as the one below.
+function dropRestatedBelow(lines: string[], after: string): string[] {
+  const below = after.split('\n').slice(1).map(line => line.trim()).filter(Boolean);
+  for (let k = Math.min(lines.length - 1, below.length); k > 0; k--) {
+    const tail = lines.slice(-k).map(line => line.trim());
+    if (tail.join('').length >= 4 && !tail.every(line => /^([)\]}]+[;,]?|end)$/.test(line)) && tail.every((line, i) => line === below[i])) return lines.slice(0, -k);
   }
   return lines;
 }
@@ -90,7 +99,7 @@ export function shapeCode(text: string, linePrefix: string, lineSuffix: string, 
   if (blank) {
     if (lineSuffix.trim()) return '';
     while (lines.length > 1 && !lines[0].trim()) lines.shift();
-    lines = dropExtraClosers(dropRestated(lines, before), context.language ?? '');
+    lines = dropExtraClosers(dropRestatedBelow(dropRestated(lines, before), context.after ?? ''), context.language ?? '');
     return block(lines, linePrefix).trimEnd();
   }
   return oneLine(lines, linePrefix, lineSuffix, before);
@@ -100,5 +109,5 @@ export function finish(raw: string, prepared: Prepared): string {
   const before = prepared.request.before.replace(/\r/g, ''), after = prepared.request.after.replace(/\r/g, '');
   const normalized = normalizeInsertion(raw, before, after);
   return prepared.hint.comment ? commentInsertion(normalized, prepared.linePrefix, prepared.request.language)
-    : shapeCode(normalized, prepared.linePrefix, prepared.lineSuffix, { before, language: prepared.request.language });
+    : shapeCode(normalized, prepared.linePrefix, prepared.lineSuffix, { before, after, language: prepared.request.language });
 }

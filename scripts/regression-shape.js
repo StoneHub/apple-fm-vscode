@@ -62,4 +62,7 @@ const withIntent = prepare(big, big.length, 'ruby', 'nearby').request;
 assert.ok(withIntent.before.length > 2000, 'before keeps its half of the window');
 assert.ok(withIntent.context.length <= 1100, 'intent is capped');
 assert.ok(withIntent.before.length + withIntent.after.length + withIntent.context.length <= 6000, 'request fits the helper limit');
+// A block that restates the line below the cursor loses that line, but a new block keeps its own end (#1).
+assert.equal(shapeCode('return 0\n    return sum(values) / len(values)', '        ', '', { after: '\n    return sum(values) / len(values)\n', language: 'python' }), 'return 0');
+assert.equal(shapeCode('def x\n  1\nend', '  ', '', { after: '\nend\n', language: 'ruby' }), 'def x\n    1\n  end');
 console.log('shape regressions: PASS');

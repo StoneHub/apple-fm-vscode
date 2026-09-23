@@ -20,9 +20,18 @@ export function normalizeInsertion(text: string, before: string, after: string):
     if (codePrefix && unindented.startsWith(codePrefix)) value = unindented.slice(codePrefix.length);
   }
   const lineSuffix = after.split('\n')[0];
-  if (after.length > 0 && value.endsWith(after)) value = value.slice(0, -after.length);
-  else if (lineSuffix.trim() && value.endsWith(lineSuffix)) value = value.slice(0, -lineSuffix.length);
+  // A reply ending with several lines of the rest of the file is an echo; a single-line remainder goes through the bracket check.
+  if (after.includes('\n') && value.endsWith(after)) value = value.slice(0, -after.length);
+  else value = stripSuffix(value, lineSuffix);
   return value;
+}
+export const bracketExcess = (text: string) => (text.match(/[)\]}]/g)?.length ?? 0) - (text.match(/[([{]/g)?.length ?? 0);
+// Drop a repeat of the text after the cursor; a closing bracket is dropped only when the insertion closes more than it opens.
+export function stripSuffix(value: string, suffix: string): string {
+  const tail = suffix.trim();
+  if (!tail || !value.trimEnd().endsWith(tail)) return value;
+  if (/[)\]}]/.test(tail) && bracketExcess(value) <= 0) return value;
+  return value.trimEnd().slice(0, -tail.length);
 }
 export class ProcessBackend implements Backend {
   private child?: ChildProcessWithoutNullStreams; private closePromise?: Promise<void>;

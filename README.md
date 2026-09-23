@@ -36,7 +36,7 @@ See `MODEL_NOTES.md` for current model controls, the 64 GiB question, and realis
 
 ```sh
 npm install
-cd ../swift && swift build -c release && cd ../vscode
+(cd ../apple-fm-swift && swift build -c release)
 npm run package
 code --install-extension apple-fm-inline-completion-0.1.7.vsix --force
 ```
@@ -55,7 +55,7 @@ For an already-open window, run **Developer: Reload Window** to load the install
 
 Commands: `Apple FM: Request Suggestion`, `Apple FM: Enable`, `Apple FM: Disable`, and `Apple FM: Open Control Panel`. Set `appleFm.backend` to `swift` for the bundled helper. The optional application-scoped `appleFm.swiftHelperPath` selects an absolute helper path.
 
-The package requires an Apple Silicon Mac running macOS 27 or later with Apple Foundation Models available. The bundled Swift request helper has a macOS 15 minimum, while the context meter helper is built with a macOS 27 minimum. Local files and untitled documents work in trusted or Restricted Mode windows; remote and browser workspaces are excluded. Credential-like filenames are skipped. Releases are unsigned developer previews; no notarization proof is provided.
+The package requires an Apple Silicon Mac running macOS 27 or later with Apple Foundation Models available. The bundled Swift request helper has a macOS 14 minimum, while the context meter helper is built with a macOS 27 minimum. Local files and untitled documents work in trusted or Restricted Mode windows; remote and browser workspaces are excluded. Credential-like filenames are skipped. Releases are unsigned developer previews; no notarization proof is provided.
 
 Remove with `code --uninstall-extension local.apple-fm-inline-completion`.
 

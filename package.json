@@ -234,8 +234,9 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
+    "test": "npm run compile && for f in scripts/regression-*.js; do node \"$f\" || exit 1; done",
     "copy-swift-helper": "./scripts/copy-swift-helper.sh",
-    "package": "npm run compile && npm run copy-swift-helper && npx --yes @vscode/vsce package --no-dependencies"
+    "package": "npm test && npm run copy-swift-helper && npx --yes @vscode/vsce package --no-dependencies"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

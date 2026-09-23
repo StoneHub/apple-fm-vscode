@@ -1,0 +1,7 @@
+{
+  "fixture": "python_comment.py",
+  "backend": "fm",
+  "raw": "# Read the file and return its contents",
+  "insertion": "return its contents",
+  "verdict": "good"
+}

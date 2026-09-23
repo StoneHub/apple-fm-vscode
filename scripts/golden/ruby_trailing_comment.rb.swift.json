@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_trailing_comment.rb",
+  "backend": "swift",
+  "raw": "# calculate the total price of all items",
+  "insertion": "calculate the total price of all items",
+  "verdict": "good"
+}

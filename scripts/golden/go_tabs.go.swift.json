@@ -1,0 +1,7 @@
+{
+  "fixture": "go_tabs.go",
+  "backend": "swift",
+  "raw": "\ttotal := 0\n\tfor _, val := range values {\n\t\ttotal += val\n\t}\n\treturn total",
+  "insertion": "total := 0\n\tfor _, val := range values {\n\t\ttotal += val\n\t}\n\treturn total",
+  "verdict": "good"
+}

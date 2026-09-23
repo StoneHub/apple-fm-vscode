@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_comment_line.rb",
+  "backend": "fm",
+  "raw": "# Returns the full name of the user as a nested array of hashes.",
+  "insertion": "full name of the user as a nested array of hashes.",
+  "verdict": "good"
+}

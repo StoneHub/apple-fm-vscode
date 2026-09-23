@@ -1,0 +1,7 @@
+{
+  "fixture": "python_comment.py",
+  "backend": "swift",
+  "raw": "the content of the file",
+  "insertion": "the content of the file",
+  "verdict": "good"
+}

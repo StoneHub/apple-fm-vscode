@@ -21,6 +21,6 @@ for (const file of files) {
     continue;
   }
   assert.equal(insertion, golden.insertion, `${file}: insertion changed`);
-  assert.ok(RANK[scored.verdict] >= RANK[golden.verdict], `${file}: ${scored.verdict}, recorded ${golden.verdict}`);
+  assert.ok(RANK[scored.verdict] >= RANK[golden.verdict], `${file}: ${scored.verdict}${scored.validator ? ` (${scored.validator})` : ''}, recorded ${golden.verdict}`);
 }
 console.log(`golden regressions: ${update ? 'UPDATED' : 'PASS'} (${files.length} recorded replies)`);

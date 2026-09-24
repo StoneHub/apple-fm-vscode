@@ -43,6 +43,8 @@ code --install-extension apple-fm-inline-completion-0.1.7.vsix --force
 
 `npm run package` runs `npm test` first, which compiles and runs every `scripts/regression-*.js`, including replays of recorded model replies in `scripts/golden/`. `node scripts/dogfood.js` runs the fixtures in `scripts/dogfood/` against the real model on both backends and marks each suggestion good, none or bad; `--record` saves the replies as new golden files.
 
+Ruby syntax scoring requires Ruby 3.1 or newer because the fixtures use omitted keyword values such as `id:`. Set `APPLE_FM_RUBY` to an absolute path when `ruby` on `PATH` is older or unavailable, for example `APPLE_FM_RUBY=/path/to/ruby npm test`. An unsupported or unavailable Ruby validator is reported as `unchecked` and cannot count as a syntax pass.
+
 ### Install or update from a release
 
 On a Mac with Apple Silicon, install the latest public release with the same command for a first install or an update:

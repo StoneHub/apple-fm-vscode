@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_end_of_line.rb",
+  "backend": "fm",
+  "raw": "  true\n```ruby\n# The method `paid?` returns `true` when the order status is marked as paid.\n# Currently, the condition is missing; adding `status == 'paid'` implements the logic.",
+  "insertion": "true",
+  "verdict": "good"
+}

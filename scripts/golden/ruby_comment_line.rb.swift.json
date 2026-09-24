@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_comment_line.rb",
+  "backend": "swift",
+  "raw": "# Returns the full name",
+  "insertion": "full name",
+  "verdict": "good"
+}

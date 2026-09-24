@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_code_under_comment.rb",
+  "backend": "fm",
+  "raw": "  def full_name\n    \"#{first} #{last}\"\n  end",
+  "insertion": "def full_name\n    \"#{first} #{last}\"\n  end",
+  "verdict": "good"
+}

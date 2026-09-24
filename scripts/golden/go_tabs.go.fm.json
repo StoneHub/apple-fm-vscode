@@ -1,0 +1,7 @@
+{
+  "fixture": "go_tabs.go",
+  "backend": "fm",
+  "raw": "\tfor _, v := range values {\n\t\treturn v + v\n\t}\n}",
+  "insertion": "for _, v := range values {\n\t\treturn v + v\n\t}",
+  "verdict": "good"
+}

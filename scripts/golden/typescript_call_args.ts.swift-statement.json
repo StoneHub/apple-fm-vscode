@@ -1,0 +1,7 @@
+{
+  "fixture": "typescript_call_args.ts",
+  "backend": "swift-statement",
+  "raw": "  return `Hello, ${name}!`;",
+  "insertion": "",
+  "verdict": "none"
+}

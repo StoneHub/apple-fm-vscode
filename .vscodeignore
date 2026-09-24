@@ -1,2 +1,12 @@
 release/**
 *.vsix
+# Development files; the VSIX ships dist/*.js, bin/, media/, docs/images/, README and LICENSE.
+src/**
+scripts/**
+native/**
+dist/**/*.map
+tsconfig.json
+IDEAS.md
+STATUS.md
+MODEL_NOTES.md
+.gitignore

@@ -1,0 +1,7 @@
+{
+  "fixture": "typescript_block.ts",
+  "backend": "swift",
+  "raw": "  return values.reduce((a, b) => a + b, 0) / values.length;",
+  "insertion": "return values.reduce((a, b) => a + b, 0) / values.length;",
+  "verdict": "good"
+}

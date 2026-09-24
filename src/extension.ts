@@ -3,9 +3,9 @@ import { ModelMeter } from './modelMeter';
 import { RefactorOverlay } from './refactorOverlay';
 import { RefactorController } from './refactor';
 import { StatusView } from './statusView';
-import { Backend, createBackend, normalizeInsertion, requestId, Request } from './backend';
+import { Backend, createBackend } from './backend';
+import { finish, prepare, stopWhen } from './pipeline';
 
-const CAP = 6000;
 let enabled = true;
 let backend: Backend;
 let generation = 0;
@@ -25,13 +25,6 @@ let refactorOverlay: RefactorOverlay | undefined;
 let modelMeter: ModelMeter;
 function refreshPanel() { panel?.update(); refactorOverlay?.update(); }
 
-function contextFor(document: vscode.TextDocument, position: vscode.Position, scope: string) {
-  const text = document.getText(), offset = document.offsetAt(position);
-  if (scope === 'currentFile' && text.length <= CAP) return { before: text.slice(0, offset), after: text.slice(offset) };
-  const start = scope === 'nearby' ? Math.max(0, offset - CAP / 2) : Math.max(0, Math.min(offset - CAP / 2, text.length - CAP));
-  if (scope === 'currentFile') output.appendLine(`currentFile context truncated (${text.length} chars)`);
-  return { before: text.slice(start, offset), after: text.slice(offset, start + CAP) };
-}
 function isCredential(document: vscode.TextDocument) {
   return /(^|\/)(\.env(?:\.[^/]+)?|[^/]+\.(?:pem|key|p12|pfx|secret|secrets)|id_rsa|id_ed25519|credentials)$/i.test(document.uri.fsPath);
 }
@@ -69,16 +62,16 @@ class Provider implements vscode.InlineCompletionItemProvider {
     const listener = token.onCancellationRequested(() => controller.abort());
     lastAutomaticRequest = requestKey;
     status.text = '$(loading~spin) Apple FM · generating'; refreshPanel();
-    const request: Request = { id: requestId(), kind: 'editor', language: document.languageId, ...contextFor(document, position, cfg.get('contextScope', 'nearby')) };
+    const prepared = prepare(document.getText(), document.offsetAt(position), document.languageId, cfg.get('contextScope', 'nearby'), message => output.appendLine(message));
     try {
-      const result = await backend.run(request, controller.signal);
+      const result = await backend.run(prepared.request, controller.signal, stopWhen(prepared));
       if (mine !== generation || !enabled || token.isCancellationRequested || !current(document, position, version)) return [];
       if (result.status !== 'ok') {
         status.text = result.status === 'error' || result.status === 'unavailable' ? `Apple FM · ${result.status}` : label();
         status.tooltip = result.reason;
         return [];
       }
-      const insertion = normalizeInsertion(result.insertText!, request.before, request.after);
+      const insertion = finish(result.insertText!, prepared);
       if (!insertion) { status.text = label(); return []; }
       status.text = '$(sparkle) Apple FM · ready';
       status.color = new vscode.ThemeColor('charts.blue');

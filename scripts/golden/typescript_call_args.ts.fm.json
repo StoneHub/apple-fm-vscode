@@ -1,0 +1,7 @@
+{
+  "fixture": "typescript_call_args.ts",
+  "backend": "fm",
+  "raw": "`name + \" \" + \"Hello, \" + name + \"!\"`",
+  "insertion": "`name + \" \" + \"Hello, \" + name + \"!\"`",
+  "verdict": "good"
+}

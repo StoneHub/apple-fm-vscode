@@ -1,0 +1,7 @@
+{
+  "fixture": "typescript_block.ts",
+  "backend": "fm",
+  "raw": "  const sum = values.reduce((acc, curr) => acc + curr, 0);\n  return sum / values.length;",
+  "insertion": "const sum = values.reduce((acc, curr) => acc + curr, 0);\n  return sum / values.length;",
+  "verdict": "good"
+}

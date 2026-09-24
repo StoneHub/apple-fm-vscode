@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_comment_line.rb",
+  "backend": "swift-echo",
+  "raw": "# Returns the",
+  "insertion": "",
+  "verdict": "none"
+}

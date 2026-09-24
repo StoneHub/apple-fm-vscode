@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_mid_line.rb",
+  "backend": "swift-restated",
+  "raw": "  def index\n    @users = User.where(status: 'active')\n  end\nend",
+  "insertion": "status: 'active'",
+  "verdict": "good"
+}

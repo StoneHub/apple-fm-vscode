@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_end_of_line.rb",
+  "backend": "swift",
+  "raw": "  'paid'",
+  "insertion": "'paid'",
+  "verdict": "good"
+}

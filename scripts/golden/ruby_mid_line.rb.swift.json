@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_mid_line.rb",
+  "backend": "swift",
+  "raw": "User.all",
+  "insertion": "User.all",
+  "verdict": "good"
+}

@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_column_zero.rb",
+  "backend": "fm",
+  "raw": "  def initials\n    @first&.upcase&.gsub(/[A-Z]/, '')&.capitalize&.concat(@last&.upcase&.gsub(/[A-Z]/, '')&.capitalize)\n  end",
+  "insertion": "  def initials\n    @first&.upcase&.gsub(/[A-Z]/, '')&.capitalize&.concat(@last&.upcase&.gsub(/[A-Z]/, '')&.capitalize)\n  end",
+  "verdict": "good"
+}

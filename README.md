@@ -1,6 +1,6 @@
 # Apple FM Inline Completion
 
-Experimental inline completion using the on-device Apple Foundation Model on this Mac. Context comes from the live, unsaved document and is bounded to 6,000 characters. Tab accepts through VS Code's normal inline completion behavior; Escape dismisses. No branding is added to ghost text.
+Experimental inline completion using the on-device Apple Foundation Model on this Mac. Context comes from the live, unsaved document: 2,000 characters before the cursor and 1,000 after, or up to 6,000 with current-file context. Inside a comment, suggestions only continue the comment on that line. On a code line under a comment, the comment is sent as the intent for the code. Tab accepts through VS Code's normal inline completion behavior; Escape dismisses. No branding is added to ghost text.
 
 ![Apple FM refactor alternatives inside the editor, with local model controls and context usage](docs/images/refactor.png)
 
@@ -36,10 +36,14 @@ See `MODEL_NOTES.md` for current model controls, the 64 GiB question, and realis
 
 ```sh
 npm install
-cd ../swift && swift build -c release && cd ../vscode
+(cd ../apple-fm-swift && swift build -c release)
 npm run package
 code --install-extension apple-fm-inline-completion-0.1.7.vsix --force
 ```
+
+`npm run package` runs `npm test` first, which compiles and runs every `scripts/regression-*.js`, including replays of recorded model replies in `scripts/golden/`. `node scripts/dogfood.js` runs the fixtures in `scripts/dogfood/` against the real model on both backends and marks each suggestion good, none or bad; `--record` saves the replies as new golden files.
+
+Ruby syntax scoring requires Ruby 3.1 or newer because the fixtures use omitted keyword values such as `id:`. Set `APPLE_FM_RUBY` to an absolute path when `ruby` on `PATH` is older or unavailable, for example `APPLE_FM_RUBY=/path/to/ruby npm test`. An unsupported or unavailable Ruby validator is reported as `unchecked` and cannot count as a syntax pass.
 
 ### Install or update from a release
 
@@ -55,7 +59,7 @@ For an already-open window, run **Developer: Reload Window** to load the install
 
 Commands: `Apple FM: Request Suggestion`, `Apple FM: Enable`, `Apple FM: Disable`, and `Apple FM: Open Control Panel`. Set `appleFm.backend` to `swift` for the bundled helper. The optional application-scoped `appleFm.swiftHelperPath` selects an absolute helper path.
 
-The package requires an Apple Silicon Mac running macOS 27 or later with Apple Foundation Models available. The bundled Swift request helper has a macOS 15 minimum, while the context meter helper is built with a macOS 27 minimum. Local files and untitled documents work in trusted or Restricted Mode windows; remote and browser workspaces are excluded. Credential-like filenames are skipped. Releases are unsigned developer previews; no notarization proof is provided.
+The package requires an Apple Silicon Mac running macOS 27 or later with Apple Foundation Models available. The bundled Swift request helper has a macOS 14 minimum, while the context meter helper is built with a macOS 27 minimum. Local files and untitled documents work in trusted or Restricted Mode windows; remote and browser workspaces are excluded. Credential-like filenames are skipped. Releases are unsigned developer previews; no notarization proof is provided.
 
 Remove with `code --uninstall-extension local.apple-fm-inline-completion`.
 

@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_trailing_comment.rb",
+  "backend": "fm",
+  "raw": "# Calculates the total price of all items in the cart by summing their prices using the # &:symbol syntax for a concise sum.",
+  "insertion": "Calculates the total price of all items in the cart by summing their prices using the # &:symbol syntax for a concise sum.",
+  "verdict": "good"
+}

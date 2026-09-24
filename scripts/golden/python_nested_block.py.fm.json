@@ -2,6 +2,6 @@
   "fixture": "python_nested_block.py",
   "backend": "fm",
   "raw": "    return sum(values) / len(values)",
-  "insertion": "return sum(values) / len(values)",
-  "verdict": "good"
+  "insertion": "",
+  "verdict": "none"
 }

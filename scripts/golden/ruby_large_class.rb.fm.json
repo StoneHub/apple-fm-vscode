@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_large_class.rb",
+  "backend": "fm",
+  "raw": "  def method_22(value)\n    value * 22\n  end",
+  "insertion": "",
+  "verdict": "none"
+}

@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_large_class.rb",
+  "backend": "swift",
+  "raw": "  def method_0(value)\n    value * 0\n  end\n\n  def method_1(value)\n    value * 1\n  end\n\n  def method_2(value)\n    value * 2\n  end\n\n  def method_3(value)\n    value * 3\n  end\n\n  def method_4(value)\n    value * 4\n  end\n\n  def method_5(value)\n    value * 5\n  end\n\n  def method_6(value)\n    value * 6\n  end\n\n  def method_7(value)\n    value * 7\n  end\n\n  def method_8(value)\n    value * 8\n  ",
+  "insertion": "",
+  "verdict": "none"
+}

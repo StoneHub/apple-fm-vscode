@@ -59,7 +59,7 @@ for (let offset = 6990; offset <= 7010; offset++) {
 const longComment = Array.from({ length: 20 }, (_, i) => `# ${String(i).padEnd(308, 'x')}`).join('\n');
 const big = 'x = 1\n'.repeat(1200) + longComment + '\n';
 const withIntent = prepare(big, big.length, 'ruby', 'nearby').request;
-assert.ok(withIntent.before.length > 2000, 'before keeps its half of the window');
+assert.ok(withIntent.before.length > 1500, 'before keeps most of its share of the window');
 assert.ok(withIntent.context.length <= 1100, 'intent is capped');
 assert.ok(withIntent.before.length + withIntent.after.length + withIntent.context.length <= 6000, 'request fits the helper limit');
 // A block that restates the line below the cursor loses that line, but a new block keeps its own end (#1).
@@ -78,4 +78,17 @@ assert.equal(shapeCode('sers.count', '    @users = @u', '', { language: 'ruby' }
 const inBracket = prepare('x = foo(', 8, 'ruby', 'nearby');
 assert.match(inBracket.request.context, /inside an open bracket/);
 assert.equal(prepare('x = foo()', 9, 'ruby', 'nearby').request.context, undefined);
+// The nearby window leans before the cursor and starts and ends on line boundaries (#8).
+const lines200 = Array.from({ length: 400 }, (_, i) => `line ${i} ${'x'.repeat(20)}`).join('\n');
+const mid = lines200.indexOf('line 200 ');
+const nearby = prepare(lines200, mid, 'ruby', 'nearby').request;
+assert.ok(nearby.before.length <= 2000 && nearby.before.length > 1900 && nearby.after.length <= 1000 && nearby.after.length > 900);
+assert.ok(nearby.before.startsWith('line ') && !nearby.after.endsWith('x\n'), 'window edges fall on line boundaries');
+// A reply that restates the file is dropped, streamed replies stop once the editor has what it keeps.
+assert.equal(shapeCode('def method_0(value)\n  value * 0\nend', '  ', '', { before: 'class Big\n  def method_0(value)\n    value * 0\n  end\n  ', after: '\nend\n', language: 'ruby' }), '');
+const { stopWhen } = require('../dist/pipeline');
+assert.equal(stopWhen(prepare('x = foo(', 8, 'ruby', 'nearby'))('bar)\nmore'), true);
+assert.equal(stopWhen(prepare('x = foo(', 8, 'ruby', 'nearby'))('bar)'), false);
+assert.equal(stopWhen(prepare('class A\n  \nend', 10, 'ruby', 'nearby'))('a\nb\nc'), false);
+assert.equal(stopWhen(prepare('class A\n  \nend', 10, 'ruby', 'nearby'))(Array.from({ length: 13 }, (_, i) => `l${i}`).join('\n')), true);
 console.log('shape regressions: PASS');

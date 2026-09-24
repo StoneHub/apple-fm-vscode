@@ -4,7 +4,7 @@ import { RefactorOverlay } from './refactorOverlay';
 import { RefactorController } from './refactor';
 import { StatusView } from './statusView';
 import { Backend, createBackend } from './backend';
-import { finish, prepare } from './pipeline';
+import { finish, prepare, stopWhen } from './pipeline';
 
 let enabled = true;
 let backend: Backend;
@@ -64,7 +64,7 @@ class Provider implements vscode.InlineCompletionItemProvider {
     status.text = '$(loading~spin) Apple FM · generating'; refreshPanel();
     const prepared = prepare(document.getText(), document.offsetAt(position), document.languageId, cfg.get('contextScope', 'nearby'), message => output.appendLine(message));
     try {
-      const result = await backend.run(prepared.request, controller.signal);
+      const result = await backend.run(prepared.request, controller.signal, stopWhen(prepared));
       if (mine !== generation || !enabled || token.isCancellationRequested || !current(document, position, version)) return [];
       if (result.status !== 'ok') {
         status.text = result.status === 'error' || result.status === 'unavailable' ? `Apple FM · ${result.status}` : label();

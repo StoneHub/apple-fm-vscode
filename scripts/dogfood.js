@@ -7,7 +7,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { createBackend } = require('../dist/backend');
-const { prepare, finish } = require('../dist/pipeline');
+const { prepare, finish, stopWhen } = require('../dist/pipeline');
 const { loadFixture, fixtureFiles, score, goldenPath, GOLDEN, RANK } = require('./dogfood-lib');
 
 const args = process.argv.slice(2), files = [];
@@ -34,7 +34,8 @@ function show(label, value) { console.log(`  ${label.padEnd(8)}${JSON.stringify(
     for (const kind of kinds) for (let run = 1; run <= Number(opts.runs); run++) {
       const prepared = prepare(text, offset, language, opts.scope);
       const started = Date.now();
-      const result = await backends[kind].run(prepared.request);
+      const result = await backends[kind].run(prepared.request, undefined, stopWhen(prepared));
+      const diag = backends[kind].diagnostics();
       const ms = Date.now() - started;
       const insertion = result.status === 'ok' ? finish(result.insertText, prepared) : '';
       const mode = prepared.hint.comment ? 'comment' : prepared.hint.context ? 'code+intent' : 'code';
@@ -44,7 +45,7 @@ function show(label, value) { console.log(`  ${label.padEnd(8)}${JSON.stringify(
       const golden = name !== '--text' && fs.existsSync(goldenPath(name, kind)) ? JSON.parse(fs.readFileSync(goldenPath(name, kind), 'utf8')) : undefined;
       const worse = golden && RANK[scored.verdict] < RANK[golden.verdict];
       if (worse) regressions++;
-      console.log(`${name} [${kind}${Number(opts.runs) > 1 ? ` #${run}` : ''}] ${mode} ${result.status} ${ms}ms ${scored.verdict}${failed.length ? ` failed: ${failed.join(', ')}` : ''}${worse ? ` WORSE THAN GOLDEN ${golden.verdict}` : ''}`);
+      console.log(`${name} [${kind}${Number(opts.runs) > 1 ? ` #${run}` : ''}] ${mode} ${result.status} ${ms}ms${diag?.firstByteMs !== undefined ? ` first ${diag.firstByteMs}ms` : ''}${diag?.stoppedEarly ? ' stopped' : ''} ${scored.verdict}${failed.length ? ` failed: ${failed.join(', ')}` : ''}${worse ? ` WORSE THAN GOLDEN ${golden.verdict}` : ''}`);
       show('raw', result.insertText ?? result.reason ?? '');
       show('insert', insertion);
       // The cursor line and any inserted lines, as they would read in the editor after Tab.

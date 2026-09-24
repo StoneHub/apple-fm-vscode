@@ -7,10 +7,16 @@ export type Prepared = { request: Request; hint: CompletionHint; linePrefix: str
 
 // Move window edges off the middle of a surrogate pair, so the request stays valid JSON for the Swift helper.
 const lowSurrogate = (text: string, i: number) => /[\uDC00-\uDFFF]/.test(text[i] ?? '');
+// The nearby window is small because prompt size sets the time to the first suggestion (about 2 s at 6000 characters, 0.8 s at 2400),
+// and it leans toward the text before the cursor, starting and ending on line boundaries.
+export const NEARBY_BEFORE = 2000, NEARBY_AFTER = 1000;
 function contextFor(text: string, offset: number, scope: string, cap: number, note?: (message: string) => void) {
   if (scope === 'currentFile' && text.length <= cap) return { before: text.slice(0, offset), after: text.slice(offset) };
-  let start = scope === 'nearby' ? Math.max(0, offset - Math.floor(cap / 2)) : Math.max(0, Math.min(offset - Math.floor(cap / 2), text.length - cap));
-  let end = start + cap;
+  const nearby = scope === 'nearby', share = Math.min(1, cap / (NEARBY_BEFORE + NEARBY_AFTER));
+  let start = nearby ? Math.max(0, offset - Math.floor(NEARBY_BEFORE * share)) : Math.max(0, Math.min(offset - Math.floor(cap / 2), text.length - cap));
+  let end = nearby ? offset + Math.floor(NEARBY_AFTER * share) : start + cap;
+  if (nearby && start > 0 && text.indexOf('\n', start) >= 0 && text.indexOf('\n', start) < offset) start = text.indexOf('\n', start) + 1;
+  if (nearby && end < text.length && text.lastIndexOf('\n', end) > offset) end = text.lastIndexOf('\n', end);
   if (lowSurrogate(text, start)) start++;
   if (lowSurrogate(text, end)) end--;
   if (scope === 'currentFile') note?.(`currentFile context truncated (${text.length} chars)`);
@@ -108,6 +114,13 @@ function block(lines: string[], linePrefix: string): string {
     return linePrefix + (line.startsWith(first.slice(0, firstIndent)) ? line.slice(firstIndent) : line.trimStart());
   }).join('\n');
 }
+export const MAX_BLOCK_LINES = 12, MAX_REPLY_CHARS = 1200;
+// A block whose first code line already exists in the window is the model restating the file, not new code.
+function restatesFile(lines: string[], before: string, after: string): boolean {
+  const first = lines.find(line => line.trim())?.trim() ?? '';
+  if (first.length < 8 || /^([)\]}]+[;,]?|end)$/.test(first)) return false;
+  return [...before.split('\n').slice(0, -1), ...after.split('\n').slice(1)].some(line => line.trim() === first);
+}
 // After code, keep one line. On an empty line, place a block at the cursor. Before existing code on an otherwise empty line, offer nothing.
 export function shapeCode(text: string, linePrefix: string, lineSuffix: string, context: ShapeContext = {}): string {
   const before = context.before ?? '', blank = !linePrefix.trim();
@@ -116,9 +129,23 @@ export function shapeCode(text: string, linePrefix: string, lineSuffix: string, 
     if (lineSuffix.trim()) return '';
     while (lines.length > 1 && !lines[0].trim()) lines.shift();
     lines = dropExtraClosers(dropRestatedBelow(dropRestated(lines, before), context.after ?? ''), context.language ?? '');
+    if (restatesFile(lines, before, context.after ?? '')) return '';
+    lines = dropExtraClosers(lines.slice(0, MAX_BLOCK_LINES), context.language ?? '');
     return block(lines, linePrefix).trimEnd();
   }
   return oneLine(lines, linePrefix, lineSuffix, before);
+}
+// Tells the backend when a streamed reply has everything the editor will keep: the first new line of a one-line
+// suggestion, 12 lines of a block, or 1200 characters of anything.
+export function stopWhen(prepared: Prepared): (text: string) => boolean {
+  const oneLine = prepared.hint.comment || !!prepared.linePrefix.trim();
+  const before = prepared.request.before.replace(/\r/g, '');
+  return text => {
+    if (text.length > MAX_REPLY_CHARS) return true;
+    const lines = text.replace(/^```\w*\n/, '').split('\n');
+    if (oneLine) return lines.length > 1 && !!lines[0].trim() && !restated(lines[0], before);
+    return lines.filter(line => line.trim()).length > MAX_BLOCK_LINES;
+  };
 }
 export function finish(raw: string, prepared: Prepared): string {
   // clean() drops \r from the reply, so compare against the window without it too.

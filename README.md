@@ -1,6 +1,6 @@
 # Apple FM Inline Completion
 
-Experimental inline completion using the on-device Apple Foundation Model on this Mac. Context comes from the live, unsaved document and is bounded to 6,000 characters. Tab accepts through VS Code's normal inline completion behavior; Escape dismisses. No branding is added to ghost text.
+Experimental inline completion using the on-device Apple Foundation Model on this Mac. Context comes from the live, unsaved document: 2,000 characters before the cursor and 1,000 after, or up to 6,000 with current-file context. Inside a comment, suggestions only continue the comment on that line. On a code line under a comment, the comment is sent as the intent for the code. Tab accepts through VS Code's normal inline completion behavior; Escape dismisses. No branding is added to ghost text.
 
 ![Apple FM refactor alternatives inside the editor, with local model controls and context usage](docs/images/refactor.png)
 
@@ -40,6 +40,8 @@ npm install
 npm run package
 code --install-extension apple-fm-inline-completion-0.1.7.vsix --force
 ```
+
+`npm run package` runs `npm test` first, which compiles and runs every `scripts/regression-*.js`, including replays of recorded model replies in `scripts/golden/`. `node scripts/dogfood.js` runs the fixtures in `scripts/dogfood/` against the real model on both backends and marks each suggestion good, none or bad; `--record` saves the replies as new golden files.
 
 ### Install or update from a release
 

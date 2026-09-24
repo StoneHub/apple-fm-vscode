@@ -1,7 +1,7 @@
 {
   "fixture": "typescript_call_args.ts",
   "backend": "swift",
-  "raw": "  return `Hello, ${name}!`;",
-  "insertion": "  return `Hello, ${name}!`;",
-  "verdict": "bad"
+  "raw": "  console.log(`Hello, ${name}`);",
+  "insertion": "`Hello, ${name}`",
+  "verdict": "good"
 }

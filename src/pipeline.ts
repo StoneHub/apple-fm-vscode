@@ -21,6 +21,8 @@ export function prepare(text: string, offset: number, language: string, scope: s
   const linePrefix = text.slice(lineStart, offset), lineSuffix = text.slice(offset, lineEnd < 0 ? text.length : lineEnd).replace(/\r$/, '');
   const linesAbove = text.slice(0, Math.max(0, lineStart - 1)).split('\n').slice(-MAX_COMMENT_LINES);
   const hint = completionHint(language, linePrefix, lineStart ? linesAbove : []);
+  // Inside an open bracket the model tends to start a new statement, so say what belongs there.
+  if (!hint.comment && bracketExcess(linePrefix) < 0) hint.context = [hint.context, 'The cursor is inside an open bracket on this line. Continue that expression, such as the arguments of the call. Do not start a new statement.'].filter(Boolean).join('\n\n');
   const request: Request = { id: requestId(), kind: 'editor', language, ...contextFor(text, offset, scope, CAP - (hint.context?.length ?? 0), note), context: hint.context, mode: hint.comment ? 'comment' : undefined };
   return { request, hint, linePrefix, lineSuffix };
 }
@@ -34,11 +36,25 @@ export type ShapeContext = { before?: string; after?: string; language?: string 
 function restated(line: string, before: string) {
   return !!line.trim() && before.split('\n').slice(0, -1).some(above => above.trim() === line.trim());
 }
+// Length of the longest word-aligned tail of the typed line, 4 or more characters, that the reply starts by repeating (User.where( in @users = User.where().
+export function repeatedTail(reply: string, linePrefix: string): number {
+  const typed = linePrefix.trimStart();
+  for (let start = 0; start <= typed.length - 4; start++) {
+    if (start > 0 && /[\w$]/.test(typed[start - 1]) && /[\w$]/.test(typed[start])) continue;
+    const tail = typed.slice(start);
+    if (tail.trim().length >= 4 && reply.startsWith(tail)) return tail.length;
+  }
+  return 0;
+}
+// A reply that opens a new line of code: indented as if it started a line, or led by a statement keyword.
+const NEW_STATEMENT = /^([ \t]{2,}|\t)|^\s*(def|class|module|return|const|let|var|function|import|export|end)\b/;
 // When the model restates earlier lines and then the cursor line, continue from that restatement instead of its first line.
+// Inside an open bracket, a reply that starts a new statement is dropped rather than pasted into the arguments.
 function oneLine(lines: string[], linePrefix: string, lineSuffix: string, before: string): string {
   const anchor = linePrefix.trim();
   const echo = anchor.length >= 3 && restated(lines[0], before) ? lines.slice(1).find(line => line.trimStart().startsWith(anchor)) : undefined;
-  const line = stripSuffix(echo ? echo.trimStart().slice(anchor.length) : lines[0], lineSuffix);
+  if (!echo && bracketExcess(linePrefix) < 0 && NEW_STATEMENT.test(lines[0])) return '';
+  const line = stripSuffix(echo ? echo.trimStart().slice(anchor.length) : lines[0].slice(repeatedTail(lines[0], linePrefix)), lineSuffix);
   return /\s$/.test(linePrefix) ? line.trimStart() : line;
 }
 // Drop leading lines that repeat the lines just above the cursor.

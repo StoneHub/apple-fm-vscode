@@ -65,4 +65,17 @@ assert.ok(withIntent.before.length + withIntent.after.length + withIntent.contex
 // A block that restates the line below the cursor loses that line, but a new block keeps its own end (#1).
 assert.equal(shapeCode('return 0\n    return sum(values) / len(values)', '        ', '', { after: '\n    return sum(values) / len(values)\n', language: 'python' }), 'return 0');
 assert.equal(shapeCode('def x\n  1\nend', '  ', '', { after: '\nend\n', language: 'ruby' }), 'def x\n    1\n  end');
+// Inside an open bracket, a new statement is dropped but arguments are kept (#15).
+assert.equal(shapeCode('  def format_price(amount)', '    format_price(', ')', { language: 'ruby' }), '');
+assert.equal(shapeCode('return `Hello, ${name}!`;', '  console.log(', ');', { language: 'typescript' }), '');
+assert.equal(shapeCode('item.price)', '    format_price(', ')', { language: 'ruby' }), 'item.price');
+assert.equal(shapeCode('`Hello, ${name}!`', '  console.log(', ');', { language: 'typescript' }), '`Hello, ${name}!`');
+assert.equal(shapeCode('  true', '    status == ', '', { language: 'ruby' }), 'true');
+// A reply that repeats the end of the typed line loses the repeat.
+assert.equal(shapeCode('User.where(id: params[:id])', '    @users = User.where(', ')', { language: 'ruby' }), 'id: params[:id]');
+assert.equal(shapeCode('where(id: 1)', '    @users = User.where(', ')', { language: 'ruby' }), 'id: 1');
+assert.equal(shapeCode('sers.count', '    @users = @u', '', { language: 'ruby' }), 'sers.count');
+const inBracket = prepare('x = foo(', 8, 'ruby', 'nearby');
+assert.match(inBracket.request.context, /inside an open bracket/);
+assert.equal(prepare('x = foo()', 9, 'ruby', 'nearby').request.context, undefined);
 console.log('shape regressions: PASS');

@@ -1,0 +1,7 @@
+{
+  "fixture": "ruby_call_args.rb",
+  "backend": "fm-statement",
+  "raw": "  def format_price(amount)\n    \"%.2f\" % amount\n  end\nend",
+  "insertion": "",
+  "verdict": "none"
+}

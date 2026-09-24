@@ -3,6 +3,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { bracketExcess } = require('../dist/backend');
+const { repeatedTail } = require('../dist/pipeline');
 
 const LANGUAGES = { rb: 'ruby', py: 'python', ts: 'typescript', js: 'javascript', swift: 'swift', go: 'go', sh: 'shellscript', rs: 'rust', sql: 'sql' };
 const FIXTURES = path.join(__dirname, 'dogfood');
@@ -36,7 +37,7 @@ function score(fixture, prepared, insertion) {
   const oneLine = prepared.hint.comment || !!anchor;
   const checks = {
     suggested: insertion.trim().length > 0,
-    noEcho: anchor.length >= 3 ? !insertion.trimStart().startsWith(anchor) : null,
+    noEcho: anchor.length >= 3 ? !insertion.trimStart().startsWith(anchor) && repeatedTail(insertion, prepared.linePrefix) === 0 : null,
     noExtraClosers: lines.length > 1 ? bracketExcess(insertion) <= 0 && extraEnds <= 0 : null,
     shape: oneLine ? !insertion.includes('\n') : null,
     parses: insertion.trim() ? parses(language, text.slice(0, offset) + insertion + text.slice(offset)) : null,

@@ -1,7 +1,7 @@
 {
   "fixture": "ruby_mid_line.rb",
   "backend": "fm",
-  "raw": "  @users = User.where(id: params[:id])",
+  "raw": "User.where(id: params[:id])",
   "insertion": "id: params[:id]",
   "verdict": "good"
 }

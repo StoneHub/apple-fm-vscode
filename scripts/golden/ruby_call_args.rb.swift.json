@@ -1,7 +1,7 @@
 {
   "fixture": "ruby_call_args.rb",
   "backend": "swift",
-  "raw": "  def format_price(\n    price\n  )\n  \"#{price.to_s} #{@currency}\"\n  end",
-  "insertion": "  def format_price(",
-  "verdict": "bad"
+  "raw": "  format_price(Suffix: price)",
+  "insertion": "Suffix: price",
+  "verdict": "good"
 }

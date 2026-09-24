@@ -1,7 +1,7 @@
 {
   "fixture": "python_nested_block.py",
   "backend": "swift",
-  "raw": "return 0\n    return sum(values) / len(values)",
+  "raw": "def average(values):\n    if not values:\n        return 0\n    return sum(values) / len(values)",
   "insertion": "return 0",
   "verdict": "good"
 }

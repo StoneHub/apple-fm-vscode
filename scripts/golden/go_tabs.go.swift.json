@@ -1,7 +1,7 @@
 {
   "fixture": "go_tabs.go",
   "backend": "swift",
-  "raw": "\ttotal := 0\n\tfor _, val := range values {\n\t\ttotal += val\n\t}\n\treturn total",
-  "insertion": "total := 0\n\tfor _, val := range values {\n\t\ttotal += val\n\t}\n\treturn total",
+  "raw": "func sum(values []int) int {\n\ttotal := 0\n\tfor _, v := range values {\n\t\ttotal += v\n\t}\n\treturn total\n}",
+  "insertion": "total := 0\n\tfor _, v := range values {\n\t\ttotal += v\n\t}\n\treturn total",
   "verdict": "good"
 }

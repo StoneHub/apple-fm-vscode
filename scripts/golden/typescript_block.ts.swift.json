@@ -1,7 +1,7 @@
 {
   "fixture": "typescript_block.ts",
   "backend": "swift",
-  "raw": "  const sum = values.reduce((acc, val) => acc + val, 0);\n  return sum / values.length;",
-  "insertion": "const sum = values.reduce((acc, val) => acc + val, 0);\n  return sum / values.length;",
+  "raw": "  return values.reduce((a, b) => a + b, 0) / values.length;",
+  "insertion": "return values.reduce((a, b) => a + b, 0) / values.length;",
   "verdict": "good"
 }

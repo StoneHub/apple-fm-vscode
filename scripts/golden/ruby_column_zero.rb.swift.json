@@ -1,7 +1,7 @@
 {
   "fixture": "ruby_column_zero.rb",
   "backend": "swift",
-  "raw": "  def initials\n    @first&.upcase&.succ&.to_s\n  end",
-  "insertion": "  def initials\n    @first&.upcase&.succ&.to_s\n  end",
+  "raw": "def initials\n  @first && @last ? \"#{@first} #{@last}\" : nil\nend",
+  "insertion": "def initials\n  @first && @last ? \"#{@first} #{@last}\" : nil\nend",
   "verdict": "good"
 }

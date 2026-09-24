@@ -1,7 +1,7 @@
 {
   "fixture": "ruby_mid_line.rb",
   "backend": "swift",
-  "raw": "@users = User.where(id: )",
-  "insertion": "id: ",
+  "raw": "User.all",
+  "insertion": "User.all",
   "verdict": "good"
 }

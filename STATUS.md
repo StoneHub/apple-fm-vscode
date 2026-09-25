@@ -1,6 +1,14 @@
-# VS Code prototype status
+# VS Code status
 
-## Current checkpoint: 0.1.6 installed and running
+## Current checkpoint: 0.1.8
+
+The editor now sends the line or block reply budget to the Swift helper, bundled from apple-fm-swift `983b327`. Comment shaping stays in the editor. Code and terminal prompts are preserved after live testing caught a regression from broadening the helper prompt change.
+
+`npm test` passed the five regression scripts, including 31 golden replies. Three live runs of 13 Swift fixtures produced 33 good, 6 empty, 0 bad and 0 unchecked, with no baseline verdict regression. The 19-file VSIX packaged successfully and was installed on this Mac. Actual VS Code activated it with the Swift backend in a synthetic workspace; Tab acceptance still needs to be checked in the editor.
+
+The known long-block truncation bug remains tracked in #20. Prompt unification (#16), Provider-rule coverage (#17), and large-file quality (#18) remain open. No public release was created.
+
+## Earlier verification
 
 Selection refactoring now uses a native editor-anchored widget beneath the first selected line. Enter an instruction, Generate 3, browse alternatives with arrows, switch between changes and replacement, and Apply explicitly. The selection workflow opens no separate diff tabs. This uses the stable Comments API, not Copilot inline chat or its agent loop.
 

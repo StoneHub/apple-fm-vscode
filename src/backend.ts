@@ -1,6 +1,6 @@
 import { spawn, ChildProcessWithoutNullStreams } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-export type Request = { id: string; kind: 'editor'; language: string; before: string; after: string; context?: string; mode?: 'comment' };
+export type Request = { id: string; kind: 'editor'; language: string; before: string; after: string; context?: string; mode?: 'comment'; keep?: 'line' | 'block' };
 export type Result = { id: string; status: 'ok'|'empty'|'unavailable'|'cancelled'|'error'; insertText?: string; reason?: string };
 // stop, when given, sees the streamed reply so far; returning true ends the request early with that text (CLI backend only).
 export interface Backend { run(request: Request, signal?: AbortSignal, stop?: (text: string) => boolean): Promise<Result>; cancel(): void; dispose(): Promise<void>; diagnostics(): Diagnostics | undefined; }

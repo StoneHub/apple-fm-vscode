@@ -29,7 +29,7 @@ export function prepare(text: string, offset: number, language: string, scope: s
   const hint = completionHint(language, linePrefix, lineStart ? linesAbove : []);
   // Inside an open bracket the model tends to start a new statement, so say what belongs there.
   if (!hint.comment && bracketExcess(linePrefix) < 0) hint.context = [hint.context, 'The cursor is inside an open bracket on this line. Continue that expression, such as the arguments of the call. Do not start a new statement.'].filter(Boolean).join('\n\n');
-  const request: Request = { id: requestId(), kind: 'editor', language, ...contextFor(text, offset, scope, CAP - (hint.context?.length ?? 0), note), context: hint.context, mode: hint.comment ? 'comment' : undefined };
+  const request: Request = { id: requestId(), kind: 'editor', language, ...contextFor(text, offset, scope, CAP - (hint.context?.length ?? 0), note), context: hint.context, mode: hint.comment ? 'comment' : undefined, keep: hint.comment || linePrefix.trim() ? 'line' : 'block' };
   return { request, hint, linePrefix, lineSuffix };
 }
 const indentOf = (line: string) => line.match(/^[ \t]*/)![0].length;

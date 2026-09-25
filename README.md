@@ -68,3 +68,7 @@ To prepare a release locally, run `scripts/release.sh`; it writes the VSIX, inst
 ```sh
 gh release create "v$(node -p "require('./package.json').version")" release/* --target main --generate-notes
 ```
+
+## Cloud task preparation
+
+See [cloud work](docs/CLOUD-WORK.md) for supported runner checks, task boundaries and local acceptance gates.

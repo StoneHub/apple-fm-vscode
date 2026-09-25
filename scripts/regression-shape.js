@@ -91,4 +91,8 @@ assert.equal(stopWhen(prepare('x = foo(', 8, 'ruby', 'nearby'))('bar)\nmore'), t
 assert.equal(stopWhen(prepare('x = foo(', 8, 'ruby', 'nearby'))('bar)'), false);
 assert.equal(stopWhen(prepare('class A\n  \nend', 10, 'ruby', 'nearby'))('a\nb\nc'), false);
 assert.equal(stopWhen(prepare('class A\n  \nend', 10, 'ruby', 'nearby'))(Array.from({ length: 13 }, (_, i) => `l${i}`).join('\n')), true);
+// Both helper backends get the same reply budget as the editor's shaping path.
+for (const [text, expected] of [['x = ', 'line'], ['# Explain ', 'line'], ['  ', 'block']]) {
+  assert.equal(prepare(text, text.length, 'ruby', 'nearby').request.keep, expected);
+}
 console.log('shape regressions: PASS');

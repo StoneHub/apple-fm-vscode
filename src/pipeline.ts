@@ -1,6 +1,6 @@
 // Editor-free request building and response shaping, shared by the extension and scripts/dogfood.js.
 import { bracketExcess, normalizeInsertion, requestId, Request, stripSuffix } from './backend';
-import { commentInsertion, completionHint, CompletionHint, MAX_COMMENT_LINES } from './comments';
+import { commentInsertion, completionHint, CompletionHint, MAX_COMMENT_LINES, openBlockComment } from './comments';
 
 export const CAP = 6000;
 export type Prepared = { request: Request; hint: CompletionHint; linePrefix: string; lineSuffix: string };
@@ -26,7 +26,7 @@ export function prepare(text: string, offset: number, language: string, scope: s
   const lineStart = text.lastIndexOf('\n', offset - 1) + 1, lineEnd = text.indexOf('\n', offset);
   const linePrefix = text.slice(lineStart, offset), lineSuffix = text.slice(offset, lineEnd < 0 ? text.length : lineEnd).replace(/\r$/, '');
   const linesAbove = text.slice(0, Math.max(0, lineStart - 1)).split('\n').slice(-MAX_COMMENT_LINES);
-  const hint = completionHint(language, linePrefix, lineStart ? linesAbove : []);
+  const hint = completionHint(language, linePrefix, lineStart ? linesAbove : [], openBlockComment(text.slice(0, offset), language) >= 0);
   // Inside an open bracket the model tends to start a new statement, so say what belongs there.
   if (!hint.comment && bracketExcess(linePrefix) < 0) hint.context = [hint.context, 'The cursor is inside an open bracket on this line. Continue that expression, such as the arguments of the call. Do not start a new statement.'].filter(Boolean).join('\n\n');
   const request: Request = { id: requestId(), kind: 'editor', language, ...contextFor(text, offset, scope, CAP - (hint.context?.length ?? 0), note), context: hint.context, mode: hint.comment ? 'comment' : undefined, keep: hint.comment || linePrefix.trim() ? 'line' : 'block' };
@@ -151,6 +151,6 @@ export function finish(raw: string, prepared: Prepared): string {
   // clean() drops \r from the reply, so compare against the window without it too.
   const before = prepared.request.before.replace(/\r/g, ''), after = prepared.request.after.replace(/\r/g, '');
   const normalized = normalizeInsertion(raw, before, after);
-  return prepared.hint.comment ? commentInsertion(normalized, prepared.linePrefix, prepared.request.language)
+  return prepared.hint.comment ? commentInsertion(normalized, prepared.linePrefix, prepared.request.language, prepared.hint.block)
     : shapeCode(normalized, prepared.linePrefix, prepared.lineSuffix, { before, after, language: prepared.request.language });
 }

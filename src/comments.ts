@@ -148,13 +148,15 @@ const BLOCK_CLOSER: Record<string, RegExp> = { python: /"""|'''/, ruby: /^=end\b
 export function commentInsertion(text: string, linePrefix: string, language: string, block = false): string {
   let value = text.split('\n')[0];
   if (block) {
+    // Streaming can stop at a bare fence before the backend's fence cleaner sees a newline.
+    if (/^\s*```(?:\w+)?\s*$/.test(value)) return '';
     const closer = value.search(BLOCK_CLOSER[language] ?? /\*\//);
     if (closer >= 0) value = value.slice(0, closer);
   }
   const start = block ? linePrefix.match(/^[ \t]*/)![0].length : commentStart(linePrefix, language);
   // The typed marker run, e.g. ///, ## or ;;, so a restated one is stripped whole.
   const run = start < 0 ? '' : block ? linePrefix.slice(start).match(BLOCK_DECORATION)?.[0] ?? '' : linePrefix.slice(start).match(/^([^\s\w])\1*/)?.[0] ?? '';
-  const marker = [run, ...(block ? ['*', '/*', '/**', '"""', "'''"] : markers[language] ?? [])].filter(Boolean).sort((a, b) => b.length - a.length)
+  const marker = [run, ...(block ? ['*', '/*', '/**', '"""', "'''", ...(language === 'ruby' ? ['=begin'] : [])] : markers[language] ?? [])].filter(Boolean).sort((a, b) => b.length - a.length)
     .find(m => value.trimStart().startsWith(`${m} `) || value.trim() === m);
   if (marker) value = value.trimStart().slice(marker.length);
   // The model often restates some or all of the typed comment, so drop words that overlap its ending.

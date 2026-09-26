@@ -1,5 +1,15 @@
 # VS Code status
 
+## Current checkpoint: 0.1.9
+
+Block comments and Python docstrings now use comment shaping. Provider regression coverage checks request refusal, cancellation, debounce and stale results; all 18 deliberate mutations were caught on the Mac. PRs #22 and #23 are merged. Real-model trials found two additional shaping defects, now covered by regressions: a standalone Markdown fence and an echoed Ruby `=begin` opener are suppressed inside blocks.
+
+On macOS 27.2 (26B5086k), `npm test` passed including all 31 golden replies. Synthetic JSDoc, Python and Ruby block examples were tested on CLI and Swift: all six preserved valid syntax and returned single-line insertions with no closing delimiters. This measures shaping, not semantic usefulness; the Ruby model prose was still weak. Partial snippets without closing delimiters can abstain. The bundled Swift helper was rebuilt from apple-fm-swift `5e6bbea`.
+
+The 0.1.9 VSIX was installed on this Mac. Installed comment/provider/pipeline JavaScript and both native helpers match the packaged bytes; the manifest matches apart from VS Code installation metadata. A fresh VS Code window in Restricted Mode generated `full name of the person.` inside a synthetic Python docstring. Tab inserted exactly that text and the status bar confirmed Apple FM acceptance. Existing windows and their unsaved documents were left open; reload those windows when convenient to load the update.
+
+VSIX SHA-256: `1f9f2b685a848d24cd512b20524babeeb0b0922f097fbe01115925c54db336e6`. No public release was created. Long-block truncation (#20), prompt unification (#16) and large-file quality (#18) remain follow-ups.
+
 ## Current checkpoint: 0.1.8
 
 The editor now sends the line or block reply budget to the Swift helper, bundled from apple-fm-swift `983b327`. Comment shaping stays in the editor. Code and terminal prompts are preserved after live testing caught a regression from broadening the helper prompt change.

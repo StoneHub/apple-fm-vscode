@@ -76,4 +76,9 @@ assert.deepEqual([prepared.request.mode, prepared.request.keep], ['comment', 'li
 assert.equal(finish('* Returns the display name */', prepared), 'display name');
 const code = 'def f():\n    """Doc."""\n    return ';
 assert.equal(prepare(code, code.length, 'python', 'nearby').request.mode, undefined);
+// Replies observed on the Mac: a partial fence and an echoed Ruby opener must abstain.
+assert.equal(commentInsertion('```', ' * Returns the ', 'typescript', true), '');
+assert.equal(commentInsertion('```typescript', ' * Returns the ', 'typescript', true), '');
+assert.equal(commentInsertion('=begin', 'Finds the ', 'ruby', true), '');
+assert.equal(commentInsertion('=begin Finds the user', 'Finds the ', 'ruby', true), 'user');
 console.log('comment regressions: PASS');

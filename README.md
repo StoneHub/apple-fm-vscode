@@ -38,7 +38,7 @@ See `MODEL_NOTES.md` for current model controls, the 64 GiB question, and realis
 npm install
 (cd ../apple-fm-swift && swift build -c release)
 npm run package
-code --install-extension apple-fm-inline-completion-0.1.8.vsix --force
+code --install-extension apple-fm-inline-completion-0.1.9.vsix --force
 ```
 
 `npm run package` runs `npm test` first, which compiles and runs every `scripts/regression-*.js`, including replays of recorded model replies in `scripts/golden/`. After `npm run compile`, `node scripts/check-provider-mutations.js` disables each inline Provider rule in turn and confirms `scripts/regression-provider.js` catches it. `node scripts/dogfood.js` runs the fixtures in `scripts/dogfood/` against the real model on both backends and marks each suggestion good, none or bad; `--record` saves the replies as new golden files.

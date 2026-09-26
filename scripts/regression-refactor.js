@@ -17,6 +17,7 @@ commands:{executeCommand:async(...args)=>{commands.push(args);}}};
 class Runner {cancel(){} async dispose(){} async run(){return {text:'const x = 2;',diagnostics:{argv:[],stdin:'selected code',backend:'CLI',model:'system',inputChars:13}};}}
 Module._load=function(name,parent,isMain){if(name==='vscode')return vscode;if(name==='./refactorRunner')return {RefactorRunner:Runner};return originalLoad.call(this,name,parent,isMain);};
 const {RefactorController}=require('../dist/refactor');
+Object.defineProperty(process,'platform',{value:'darwin'}); // Refactoring is Mac-only; the stubbed editor stands in for a local Mac window.
 Module._load=originalLoad;
 (async()=>{
  const controller=new RefactorController(()=>{},async()=>{});

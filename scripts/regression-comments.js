@@ -41,4 +41,39 @@ assert.equal(commentInsertion('Returns the full name', '  # Returns the fu', 'ru
 assert.equal(commentInsertion('full name', '  # Returns the fu', 'ruby'), 'll name');
 assert.equal(commentInsertion('/// full name', '/// Returns the ', 'swift'), 'full name');
 assert.equal(commentInsertion('## full name', '## Returns the ', 'ruby'), 'full name');
+// Block comments and docstrings (#13).
+const { openBlockComment } = require('../dist/comments');
+const { prepare, finish } = require('../dist/pipeline');
+for (const [language, text] of [
+  ['typescript', '/**\n * Returns the '], ['typescript', 'const x = 1; /* note '], ['c', 'int x; /* multi\n   line '],
+  ['swift', '/* outer /* inner */ still '], ['rust', '/* a /* b */ c '], ['rust', "fn f<'a>() { /* note "],
+  ['sql', 'SELECT 1; /* why '], ['css', '.a { color: red; } /* brand '],
+  ['ruby', 'x = 1\n=begin\nFinds the '], ['ruby', '=begin notes '],
+  ['python', 'def full_name(self):\n    """Returns the '], ['python', 'class User:\n    """\n    A person '],
+  ['python', '#!/usr/bin/env python\n"""Module for '], ['python', "def f():  # helper\n    r'''Raw "]]) {
+  assert.ok(openBlockComment(text, language) >= 0, `inside: ${language} ${JSON.stringify(text)}`);
+}
+for (const [language, text] of [
+  ['typescript', '/* done */ const x = '], ['typescript', 'const s = "/*"; const t = '], ['typescript', 'const t = `/*`;\nconst u = '],
+  ['typescript', '// see /* x\nconst y = '], ['javascript', '/* outer /* inner */ still '], ['php', '# old /* note\n$x = '],
+  ['ruby', '=begin\nx\n=end\ny = '], ['ruby', '  =begin\nnot a block '], ['ruby', 'label = "=begin"\n'],
+  ['python', 'query = """SELECT '], ['python', 'x = 1\n"""closed"""\ny = '], ['python', '# """ not a string\nz = '],
+  ['python', 'x = 1\n"""\nnot a docstring '], ['markdown', '/* not code ']]) {
+  assert.equal(openBlockComment(text, language), -1, `outside: ${language} ${JSON.stringify(text)}`);
+}
+const blockHint = completionHint('typescript', '   * Returns the ', [], true);
+assert.deepEqual([blockHint.comment, blockHint.block], [true, true]);
+assert.equal(commentInsertion('* Returns the full name', '   * Returns the ', 'typescript', true), 'full name');
+assert.equal(commentInsertion('full name */', '   * Returns the ', 'typescript', true), 'full name');
+assert.equal(commentInsertion('*/', '   * ', 'typescript', true), '');
+assert.equal(commentInsertion(`Returns the user's full name."""`, '    """Returns the ', 'python', true), "user's full name.");
+assert.equal(commentInsertion('Finds the user by email', 'Finds the ', 'ruby', true), 'user by email');
+assert.equal(commentInsertion('=end', 'Finds the ', 'ruby', true), '');
+// Through the pipeline: a JSDoc line gets a one-line comment suggestion; code after a closed docstring stays code.
+const jsdoc = 'export class User {\n  /**\n   * Returns the ';
+const prepared = prepare(jsdoc, jsdoc.length, 'typescript', 'nearby');
+assert.deepEqual([prepared.request.mode, prepared.request.keep], ['comment', 'line']);
+assert.equal(finish('* Returns the display name */', prepared), 'display name');
+const code = 'def f():\n    """Doc."""\n    return ';
+assert.equal(prepare(code, code.length, 'python', 'nearby').request.mode, undefined);
 console.log('comment regressions: PASS');

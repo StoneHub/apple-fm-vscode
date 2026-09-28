@@ -9,6 +9,7 @@ const file = path.join(__dirname, '..', 'dist', 'extension.js');
 const test = path.join(__dirname, 'regression-provider.js');
 const mutations = [
   ['selection', '!vscode.window.activeTextEditor?.selection.isEmpty || ', ''],
+  ['image question running', 'imageQuestion?.isGenerating || ', ''],
   ['credential-like file', ' || isCredential(document))', ')'],
   ['remote workspace', 'vscode.env.remoteName || ', ''],
   ['web workspace', 'vscode.env.uiKind === vscode.UIKind.Web || ', ''],

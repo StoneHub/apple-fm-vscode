@@ -24,7 +24,19 @@ A native widget opens directly below the selection's first line. Enter the chang
 
 The plus button generates three more (up to nine retained). A new instruction starts a fresh set. Stop cancels unfinished work; Close removes the widget. Source changes block applying old results. Selection size is capped at 6,000 characters and instructions at 1,000. Alternatives remain in memory for the session.
 
-This uses VS Code's stable editor-anchored comment widget as a local refactoring surface. It is not Copilot's inline chat agent: Apple FM requests go directly to the on-device CLI, without a Copilot tool loop. Tab autocomplete remains separate. Refactoring currently uses CLI even when inline completion is set to Swift.
+This uses VS Code's stable editor-anchored comment widget as a local refactoring surface. It is not Copilot's inline chat agent: Apple FM requests go directly to the on-device CLI, without a Copilot tool loop. Tab autocomplete remains separate. Text-only refactoring currently uses CLI even when inline completion is set to Swift; refactors with an attached image follow the backend setting.
+
+## Ask about an image
+
+Run **Apple FM: Ask About Image…** from the Command Palette, or **Ask about image…** in the side panel. Choose one PNG, JPEG, HEIC, GIF, TIFF, BMP or WebP file, then type a question such as “What does this error mean?”. If the active local editor has a selection, it is sent as context, and the question box says so, naming the file and lines; otherwise only the image and question are sent. A notification shows progress and has a Cancel button. The answer opens beside the editor as a read-only preview headed with the image name.
+
+To use an image as a visual reference for a refactor, click the image button in the refactor widget's title bar. The attached image's name appears in the widget; the trash button removes it. Attaching or removing an image starts a fresh set of alternatives, like a new instruction. **Generate 3** sends the image with the selection and instruction. **Apply** uses the same source checks, and native Undo still restores the edit.
+
+Images are sent only by these explicit actions, never while you type. Requests follow `appleFm.backend`. The CLI runs `fm respond --model system --no-stream --instructions … --image <path>` with the prompt on stdin. Swift sends the helper one `kind: "image"` request. Both receive identical instructions and prompt text. Unsupported macOS, models and backends are reported, not retried. A Swift helper built before image support rejects the request as malformed; the extension reports that the helper predates image support. The helper bundled with 0.1.9 is one of these, so use the CLI or a rebuilt helper.
+
+Limits: an image of at most 20 MB (the Swift helper also rejects images over 36 megapixels), a selection of at most 6,000 characters, a question or instruction of at most 1,000, and 8,000 characters of instructions and prompt together. Replies are capped at 1,024 tokens for questions and 2,048 for refactors on Swift, 40,000 characters on either backend, and 45 seconds. One request runs at a time. Starting an image question or a refactor stops the other and any inline suggestion. Inline suggestions wait until it finishes.
+
+The image is passed by path. The extension does not read, copy or log it and creates no temporary files. The side panel shows the backend, arguments (including the image path), sizes and timing; token counts are not measured for image requests. The model is told to treat text in the image and the selected code as untrusted data, not instructions. This reduces the prompt-injection risk but does not remove it, and answers can be wrong.
 
 ## Context meter
 
@@ -57,7 +69,7 @@ The installer downloads the latest VSIX from the GitHub release, verifies its SH
 
 For an already-open window, run **Developer: Reload Window** to load the installed update. The extension details page shows the installed version; reload the window to load that build.
 
-Commands: `Apple FM: Request Suggestion`, `Apple FM: Enable`, `Apple FM: Disable`, and `Apple FM: Open Control Panel`. Set `appleFm.backend` to `swift` for the bundled helper. The optional application-scoped `appleFm.swiftHelperPath` selects an absolute helper path.
+Commands: `Apple FM: Request Suggestion`, `Apple FM: Enable`, `Apple FM: Disable`, `Apple FM: Open Control Panel`, `Apple FM: Refactor Selection`, and `Apple FM: Ask About Image…`. Set `appleFm.backend` to `swift` for the bundled helper. The optional application-scoped `appleFm.swiftHelperPath` selects an absolute helper path.
 
 The package requires an Apple Silicon Mac running macOS 27 or later with Apple Foundation Models available. The bundled Swift request helper has a macOS 14 minimum, while the context meter helper is built with a macOS 27 minimum. Local files and untitled documents work in trusted or Restricted Mode windows; remote and browser workspaces are excluded. Credential-like filenames are skipped. Releases are unsigned developer previews; no notarization proof is provided.
 

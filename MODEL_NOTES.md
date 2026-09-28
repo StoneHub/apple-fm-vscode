@@ -15,7 +15,7 @@ The extension's `fm` and `swift` choices are interfaces to the same on-device Ap
 
 ## Available capabilities
 
-The local CLI exposes greedy/default sampling, system use cases (general/content-tagging), structured output schemas, text/image inputs, streaming, and built-in OCR/barcode tools. The extension uses a narrow subset. Inline CLI completion uses greedy sampling; refactor alternatives omit greedy and ask for individually sampled solutions. Duplicate alternatives are possible and labeled.
+The local CLI exposes greedy/default sampling, system use cases (general/content-tagging), structured output schemas, text/image inputs, streaming, and built-in OCR/barcode tools. The extension uses a narrow subset. Inline CLI completion uses greedy sampling; refactor alternatives omit greedy and ask for individually sampled solutions. Duplicate alternatives are possible and labeled. Image questions and image-guided refactors send one explicitly chosen image with default sampling.
 
 The native framework exposes temperature, sampling modes with optional seeds, output token limits, structured generation, custom tools, and new dynamic session profiles. Apple also documents Private Cloud Compute and other local model adapters. PCC is a separate cloud path with its own entitlement/availability; this extension never routes there.
 

@@ -1,5 +1,13 @@
 # VS Code status
 
+## Unreleased: image questions and image-guided refactors (#24)
+
+**Apple FM: Ask About Image…** sends one explicitly chosen image and a question, plus the active selection when there is one. The answer opens in a read-only preview. The refactor widget can attach and remove one reference image; attaching or removing it resets the alternatives. Apply keeps the stale-source checks and native Undo. The extension builds the instructions and prompt once. `fm respond --image` and the Swift helper's `kind: "image"` request receive byte-identical text, with selected code inside the prompt and the helper's `context` field unused. The image is passed by path, never read or copied, and no temporary files are created. Requests are cancellable, run one at a time and stay bounded (20 MB image, 6,000-character selection, 1,000-character question, 8,000 characters of text, 45 s, capped replies).
+
+Checked on Linux only: TypeScript compiles; `npm test` passes, including `scripts/regression-image.js`, which uses fake `fm` and helper executables. It covers shared request text, both transports, legacy-helper and unavailable outcomes, bounds, cancellation with SIGKILL, stale runs, the question command and the refactor attachment. In an ad-hoc pass (script not committed), it caught 10 of 10 deliberate mutations of the compiled image, refactor and question code. `node scripts/check-provider-mutations.js` caught 19 of 19, including the new rule that inline suggestions wait while an image question runs.
+
+Pending on the Mac: nothing has run against the real model or in VS Code yet. The live CLI `--image` flag, the rebuilt helper from apple-fm-swift #8, answer quality and latency with representative screenshots, and the widget's title-bar buttons still need checking. The bundled `bin/apple-fm-helper` predates image support, so the Swift backend reports that until the helper is rebuilt.
+
 ## Current checkpoint: 0.1.9
 
 Block comments and Python docstrings now use comment shaping. Provider regression coverage checks request refusal, cancellation, debounce and stale results; all 18 deliberate mutations were caught on the Mac. PRs #22 and #23 are merged. Real-model trials found two additional shaping defects, now covered by regressions: a standalone Markdown fence and an echoed Ruby `=begin` opener are suppressed inside blocks.

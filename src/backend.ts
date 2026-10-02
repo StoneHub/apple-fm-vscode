@@ -5,8 +5,8 @@ export type Result = { id: string; status: 'ok'|'empty'|'unavailable'|'cancelled
 // stop, when given, sees the streamed reply so far; returning true ends the request early with that text (CLI backend only).
 export interface Backend { run(request: Request, signal?: AbortSignal, stop?: (text: string) => boolean): Promise<Result>; cancel(): void; dispose(): Promise<void>; diagnostics(): Diagnostics | undefined; }
 export type Diagnostics = { argv: string[]; stdin: string; backend: string; model: string; status?: string; reason?: string; durationMs?: number; firstByteMs?: number; stoppedEarly?: boolean; inputChars: number; outputChars?: number; contextChars?: number; responseText?: string; startedAt?: number; image?: string; imageBytes?: number };
-export function clean(text: string): string {
-  const value = text.replace(/^```(?:\w+)?\r?\n/, '').replace(/\r?\n```\s*$/, '').replace(/\r/g, '');
+export function clean(text: string, preserveFences = false): string {
+  const value = (preserveFences ? text : text.replace(/^```(?:\w+)?\r?\n/, '').replace(/\r?\n```\s*$/, '')).replace(/\r/g, '');
   return !value || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value) ? '' : value;
 }
 export function normalizeInsertion(text: string, before: string, after: string): string {

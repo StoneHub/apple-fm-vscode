@@ -17,7 +17,7 @@ async function until(condition, why) {
 const disposable = () => ({ dispose() {} });
 const png = path.join(dir, 'reference.png'); fs.writeFileSync(png, 'authored attachment');
 const logOf = file => JSON.parse(fs.readFileSync(file + '.log', 'utf8'));
-function fake(name, previous) {
+function fake(name, previous, backend = 'swift') {
   const file = path.join(dir, name);
   fs.writeFileSync(file, `#!${process.execPath}
 const fs = require('node:fs');
@@ -30,7 +30,8 @@ process.stdin.on('end', () => {
   if (previous) { previousPid = JSON.parse(fs.readFileSync(previous + '.log')).pid; try { process.kill(previousPid, 0); previousAlive = true; } catch {} }
   fs.writeFileSync(${JSON.stringify(file + '.log')}, JSON.stringify({ pid: process.pid, previousPid, previousAlive, startedAt: Date.now() }));
   if (!previous) setTimeout(() => {}, 30000);
-  else { const request = JSON.parse(input); process.stdout.write(JSON.stringify({ id: request.id, status: 'ok', text: 'const x = 2;' }) + '\\n'); }
+  else if (${JSON.stringify(backend)} === 'swift') { const request = JSON.parse(input); process.stdout.write(JSON.stringify({ id: request.id, status: 'ok', text: 'const x = 2;' }) + '\\n'); }
+  else process.stdout.write('const x = 2;');
 });
 `, { mode: 0o755 });
   return file;
@@ -115,8 +116,39 @@ process.on('exit', code => { if (!finished && code === 0) { console.error('hando
       console.log(JSON.stringify(outcomes.at(-1)));
     }
   }
+  for (const direction of ['image-refactor-to-text-refactor', 'text-refactor-to-image-refactor']) {
+    const imageFirst = direction === 'image-refactor-to-text-refactor';
+    const old = fake(direction + '-old');
+    const replacement = fake(direction + '-new', old, imageFirst ? 'fm' : 'swift');
+    let pending;
+    try {
+      config.swiftHelperPath = old; textExecutable = old;
+      await refactor.capture();
+      if (imageFirst) refactor.attachImage(png);
+      pending = refactor.generate('Match the image.', 1);
+      await until(() => fs.existsSync(old + '.log'), 'previous refactor runner started');
+      refactor.cancel();
+      await pending;
+      assert.equal(refactor.isGenerating, false, 'Stop finishes before the child has necessarily closed');
+      if (imageFirst) refactor.removeImage(); else refactor.attachImage(png);
+      config.swiftHelperPath = replacement; textExecutable = replacement;
+      const started = Date.now();
+      const next = refactor.generate('Match the image.', 1);
+      await until(() => fs.existsSync(replacement + '.log'), 'replacement refactor runner started');
+      const observed = logOf(replacement);
+      outcomes.push({ direction, previousAliveAtReplacementStart: observed.previousAlive, handoffMs: observed.startedAt - started });
+      await next;
+      assert.equal(observed.previousAlive, false, `${direction}: replacement launched while the previous refactor child was alive`);
+    } finally {
+      refactor.cancel();
+      if (pending) await pending;
+      await until(() => !fs.existsSync(old + '.log') || !alive(logOf(old).pid), 'previous refactor child closed');
+      await until(() => !fs.existsSync(replacement + '.log') || !alive(logOf(replacement).pid), 'replacement refactor child closed');
+      console.log(JSON.stringify(outcomes.at(-1)));
+    }
+  }
   finished = true;
-  console.log('handoff regressions: PASS (three cross-controller transitions wait for child closure)');
+  console.log('handoff regressions: PASS (cross-controller and both image/text refactor transitions wait for child closure)');
 })().catch(error => { console.error(error); process.exitCode = 1; }).finally(() => {
   refactor?.dispose(); questions?.dispose(); deactivate();
   processes.spawn = originalSpawn;

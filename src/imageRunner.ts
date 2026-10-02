@@ -90,7 +90,7 @@ export const helperRequest = (id: string, image: string, request: ImageRequest) 
 
 const firstLine = (text: string) => text.trim().split('\n')[0].slice(0, 200);
 
-export function cliOutcome(output: string, code: number | null, stderr: string): ImageOutcome {
+export function cliOutcome(output: string, code: number | null, stderr: string, task: ImageInput['task'] = 'refactor'): ImageOutcome {
   if (code !== 0) {
     if (/\b(unknown|unrecognized|unexpected)\b.*\b(option|argument|flag)/i.test(stderr))
       return { status: 'unavailable', reason: `This fm CLI does not accept --image (${firstLine(stderr)}). Image input needs macOS 27 or later; try the Swift backend.` };
@@ -98,7 +98,7 @@ export function cliOutcome(output: string, code: number | null, stderr: string):
       return { status: 'unavailable', reason: `Apple FM is unavailable: ${firstLine(stderr)}` };
     return { status: 'error', reason: firstLine(stderr) || `fm exited with code ${code ?? 'unknown'}` };
   }
-  const text = clean(output.endsWith('\n') ? output.slice(0, -1) : output);
+  const text = clean(output.endsWith('\n') ? output.slice(0, -1) : output, task === 'question');
   return text.trim() ? { status: 'ok', text } : { status: 'empty' };
 }
 
@@ -113,7 +113,7 @@ const UNAVAILABLE: Record<string, string> = {
   vision_unsupported: 'The on-device model on this Mac does not accept images.'
 };
 
-export function helperOutcome(id: string, output: string, code: number | null, stderr: string): ImageOutcome {
+export function helperOutcome(id: string, output: string, code: number | null, stderr: string, task: ImageInput['task'] = 'refactor'): ImageOutcome {
   if (code !== 0) return { status: 'error', reason: firstLine(stderr) || `Swift helper exited with code ${code ?? 'unknown'}` };
   let parsed: any;
   try { parsed = JSON.parse(output.trim()); } catch { return { status: 'error', reason: 'Malformed helper response' }; }
@@ -122,7 +122,7 @@ export function helperOutcome(id: string, output: string, code: number | null, s
   const reason = typeof parsed.reason === 'string' ? parsed.reason.slice(0, 160) : undefined;
   if (parsed.status === 'ok') {
     if (typeof parsed.text !== 'string') return { status: 'error', reason: 'Helper reply is missing text' };
-    const text = clean(parsed.text);
+    const text = clean(parsed.text, task === 'question');
     return text.trim() ? { status: 'ok', text } : { status: 'empty' };
   }
   if (parsed.status === 'unavailable') return { status: 'unavailable', reason: reason && UNAVAILABLE[reason] ? `${UNAVAILABLE[reason]} (${reason})` : `Apple FM is unavailable${reason ? ` (${reason})` : ''}.` };
@@ -224,7 +224,7 @@ export class ImageRunner {
         resolveClose();
         if (settled) return;
         if (mine !== this.generation || signal?.aborted) { finish({ status: 'cancelled' }); return; }
-        finish(swift ? helperOutcome(id, output, code, stderr) : cliOutcome(output, code, stderr));
+        finish(swift ? helperOutcome(id, output, code, stderr, input.task) : cliOutcome(output, code, stderr, input.task));
       });
       if (signal?.aborted) abort();
       else child.stdin.end(stdin);

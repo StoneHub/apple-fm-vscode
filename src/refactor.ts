@@ -106,6 +106,8 @@ export class RefactorController implements vscode.Disposable, vscode.TextDocumen
     const abort = new AbortController(); this.abort = abort;
     try {
       await this.beforeGenerate();
+      // Stop can resolve before child closure; an image/text switch must wait for both runners.
+      await Promise.all([this.runner.cancelAndWait(), this.images.cancelAndWait()]);
       for (let i = 0; i < count; i++) {
         if (abort.signal.aborted || this.session !== s || this.stale(s)) break;
         this.progress = `Generating ${i + 1} of ${count}…`;

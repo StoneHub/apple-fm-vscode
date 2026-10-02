@@ -92,12 +92,25 @@ const { ImageRunner, buildImageRequest, checkImage, cliOutcome, helperOutcome, L
 
   // CLI: fm respond --model system --no-stream --instructions <instructions> --image <path>, prompt on stdin.
   const runner = new ImageRunner();
+  // Answers can mix code blocks and prose; refactor replacements still unwrap a whole fenced block.
+  const fencedAnswer = '```swift\nlet x = 1\n```\nThis fixes it.';
+  for (const kind of ['fm', 'swift']) {
+    const executable = fake(`fenced-answer-${kind}`, kind === 'swift'
+      ? helperReply({ status: 'ok', text: fencedAnswer }) : reply(fencedAnswer));
+    const answer = await runner.run(question, { kind, executable });
+    assert.equal(answer.text, fencedAnswer, `${kind}: question answers preserve balanced code fences and prose`);
+    const replacement = fake(`fenced-refactor-${kind}`, kind === 'swift'
+      ? helperReply({ status: 'ok', text: '```swift\nlet x = 1\n```' }) : reply('```swift\nlet x = 1\n```'));
+    const code = await runner.run(refactor, { kind, executable: replacement });
+    assert.equal(code.text, 'let x = 1', `${kind}: refactors still return plain replacement code`);
+  }
+
   const fm = fake('fm', reply('```\nThe stack trace shows a null user.\n```\n'));
   const withCode = { ...question, code: 'user.name', language: 'javascript' };
   const shared = buildImageRequest(withCode);
   let result = await runner.run(withCode, { kind: 'fm', executable: fm });
   assert.equal(result.status, 'ok', result.reason);
-  assert.equal(result.text, 'The stack trace shows a null user.', 'reply is cleaned of fences and the trailing newline');
+  assert.equal(result.text, '```\nThe stack trace shows a null user.\n```', 'question answers keep Markdown fences while the CLI framing newline is removed');
   const cli = logOf(fm);
   assert.deepEqual(cli.argv, ['respond', '--model', 'system', '--no-stream', '--instructions', shared.instructions, '--image', png]);
   assert.equal(cli.stdin, shared.prompt);
@@ -241,7 +254,7 @@ async function editorFlows(fm, helper, slow) {
     commands: { executeCommand: async (...args) => { commands.push(args); } }
   };
   const textRuns = [];
-  class RefactorRunner { cancel() {} async dispose() {} async run(input) { textRuns.push(input); return { text: 'const x = 3;', diagnostics: { argv: [], stdin: '', backend: 'CLI', model: 'system', inputChars: 1 } }; } }
+  class RefactorRunner { cancel() {} async cancelAndWait() {} async dispose() {} async run(input) { textRuns.push(input); return { text: 'const x = 3;', diagnostics: { argv: [], stdin: '', backend: 'CLI', model: 'system', inputChars: 1 } }; } }
   const originalLoad = Module._load;
   Module._load = function (name, parent, isMain) {
     if (name === 'vscode') return vscode;

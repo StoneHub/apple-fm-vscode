@@ -115,6 +115,11 @@ function block(lines: string[], linePrefix: string): string {
   }).join('\n');
 }
 export const MAX_BLOCK_LINES = 12, MAX_REPLY_CHARS = 1200;
+// The Swift helper can already have cut a block at exactly 12 lines; the CLI can stop
+// in the next line or inside a string at the character limit. Neither transport tells
+// us whether the last line is complete. Abstain at the boundary rather than slicing
+// arbitrary syntax or treating balanced delimiters as proof of a complete statement.
+const atBlockLimit = (text: string) => text.length >= MAX_REPLY_CHARS || text.split('\n').length >= MAX_BLOCK_LINES;
 // A block whose first code line already exists in the window is the model restating the file, not new code.
 function restatesFile(lines: string[], before: string, after: string): boolean {
   const first = lines.find(line => line.trim())?.trim() ?? '';
@@ -126,11 +131,10 @@ export function shapeCode(text: string, linePrefix: string, lineSuffix: string, 
   const before = context.before ?? '', blank = !linePrefix.trim();
   let lines = text.split('\n');
   if (blank) {
-    if (lineSuffix.trim()) return '';
+    if (lineSuffix.trim() || atBlockLimit(text)) return '';
     while (lines.length > 1 && !lines[0].trim()) lines.shift();
     lines = dropExtraClosers(dropRestatedBelow(dropRestated(lines, before), context.after ?? ''), context.language ?? '');
     if (restatesFile(lines, before, context.after ?? '')) return '';
-    lines = dropExtraClosers(lines.slice(0, MAX_BLOCK_LINES), context.language ?? '');
     return block(lines, linePrefix).trimEnd();
   }
   return oneLine(lines, linePrefix, lineSuffix, before);
@@ -148,6 +152,9 @@ export function stopWhen(prepared: Prepared): (text: string) => boolean {
   };
 }
 export function finish(raw: string, prepared: Prepared): string {
+  // Check the original reply too: normalization can remove an echo or fence and
+  // conceal that the backend reached its budget before the remaining code closed.
+  if (!prepared.hint.comment && !prepared.linePrefix.trim() && atBlockLimit(raw)) return '';
   // clean() drops \r from the reply, so compare against the window without it too.
   const before = prepared.request.before.replace(/\r/g, ''), after = prepared.request.after.replace(/\r/g, '');
   const normalized = normalizeInsertion(raw, before, after);

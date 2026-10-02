@@ -146,6 +146,10 @@ export class RefactorController implements vscode.Disposable, vscode.TextDocumen
   removeImage(): void { this.attachImage(undefined); }
 
   cancel(): void { this.abort?.abort(); this.runner.cancel(); this.images.cancel(); }
+  async cancelAndWait(): Promise<void> {
+    this.abort?.abort();
+    await Promise.all([this.runner.cancelAndWait(), this.images.cancelAndWait()]);
+  }
   select(index: number): void {
     if (Number.isInteger(index) && this.session?.candidates[index] && this.session.selected !== index) { this.session.selected = index; this.changed(); }
   }

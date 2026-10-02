@@ -57,6 +57,10 @@ export class RefactorRunner {
 
   async dispose(): Promise<void> {
     this.disposed = true;
+    await this.cancelAndWait();
+  }
+
+  async cancelAndWait(): Promise<void> {
     this.cancel();
     await this.closePromise;
   }

@@ -48,6 +48,7 @@ export class ImageQuestion implements vscode.Disposable, vscode.TextDocumentCont
   get isGenerating(): boolean { return !!this.abort; }
   diagnostics(): Diagnostics | undefined { return this.runner.diagnostics(); }
   cancel(): void { this.abort?.abort(); this.runner.cancel(); }
+  async cancelAndWait(): Promise<void> { this.abort?.abort(); await this.runner.cancelAndWait(); }
   provideTextDocumentContent(uri: vscode.Uri): string { return this.answers.get(uri.toString()) ?? ''; }
 
   async ask(): Promise<void> {

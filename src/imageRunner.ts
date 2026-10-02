@@ -155,6 +155,11 @@ export class ImageRunner {
 
   async dispose(): Promise<void> {
     this.disposed = true;
+    await this.cancelAndWait();
+  }
+
+  // Other controllers must wait for this child's close event before starting their replacement.
+  async cancelAndWait(): Promise<void> {
     this.cancel();
     await this.closePromise;
   }

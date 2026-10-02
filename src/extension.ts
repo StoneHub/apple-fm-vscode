@@ -102,9 +102,9 @@ export function activate(context: vscode.ExtensionContext): void {
     return cfg.get<string>('backend', 'fm') === 'swift' ? { kind: 'swift', executable: cfg.get<string>('swiftHelperPath', '') || `${context.extensionPath}/bin/apple-fm-helper` } : { kind: 'fm', executable: FM_PATH };
   };
   // One model request at a time: starting a refactor or an image question stops the others.
-  refactor = new RefactorController(refreshPanel, async () => { imageQuestion?.cancel(); invalidate(); await backend?.dispose(); }, imageBackend);
+  refactor = new RefactorController(refreshPanel, async () => { invalidate(); await Promise.all([imageQuestion?.cancelAndWait(), backend?.dispose()]); }, imageBackend);
   refactorOverlay = new RefactorOverlay(refactor);
-  imageQuestion = new ImageQuestion(refreshPanel, async () => { refactor.cancel(); invalidate(); await backend?.dispose(); }, imageBackend);
+  imageQuestion = new ImageQuestion(refreshPanel, async () => { invalidate(); await Promise.all([refactor.cancelAndWait(), backend?.dispose()]); }, imageBackend);
   context.subscriptions.push(refactor, refactorOverlay, imageQuestion);
   const newer = (a?: Diagnostics, b?: Diagnostics) => (a?.startedAt ?? -1) >= (b?.startedAt ?? -1) ? a ?? b : b;
   panel = new StatusView(() => {

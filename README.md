@@ -2,6 +2,8 @@
 
 Experimental inline completion using the on-device Apple Foundation Model on this Mac. Context comes from the live, unsaved document: 2,000 characters before the cursor and 1,000 after, or up to 6,000 with current-file context. Inside a comment, including a `/* */` block, a Ruby `=begin` block or a Python docstring, suggestions only continue the comment on that line. On a code line under a comment, the comment is sent as the intent for the code. Tab accepts through VS Code's normal inline completion behavior; Escape dismisses. No branding is added to ghost text.
 
+On an empty code line, replies that reach 12 physical lines (including blank lines) or 1,200 characters are withheld rather than cut inside a block. This conservative boundary also withholds a complete reply at exactly the limit, because the Swift helper can return an already-truncated reply without a truncation flag. A fence or echoed context can reach the boundary too. Shorter replies retain the existing shaping behavior; this is not a general syntax or semantic validator. Line and comment suggestions keep their existing behavior.
+
 ![Apple FM refactor alternatives inside the editor, with local model controls and context usage](docs/images/refactor.png)
 
 Browse generated refactors in place, alongside the local model controls and context meter.
@@ -36,7 +38,7 @@ Images are sent only by these explicit actions, never while you type. Requests f
 
 Limits: an image of at most 20 MB (the Swift helper also rejects images over 36 megapixels), a selection of at most 6,000 characters, a question or instruction of at most 1,000, and 8,000 characters of instructions and prompt together. Replies are capped at 1,024 tokens for questions and 2,048 for refactors on Swift, 40,000 characters on either backend, and 45 seconds. One request runs at a time. Starting an image question or a refactor stops the other and any inline suggestion. Inline suggestions wait until it finishes.
 
-The image is passed by path. The extension does not read, copy or log it and creates no temporary files. The side panel shows the backend, arguments (including the image path), sizes and timing; token counts are not measured for image requests. The model is told to treat text in the image and the selected code as untrusted data, not instructions. This reduces the prompt-injection risk but does not remove it, and answers can be wrong.
+The image is passed by path. The extension does not read, copy or log it and creates no temporary files. The side panel shows the backend, arguments (including the image path), sizes and timing; token counts are not measured for image requests. The model is told to treat text in the image and the selected code as untrusted data, not instructions. This reduces the prompt-injection risk but does not remove it, and answers can be wrong. Current-model trials misread UI switch states, and the CLI can refuse a benign image-guided refactor with a safety-guardrail error. This is an experimental harness: review factual answers and generated refactors before using or applying them.
 
 ## Context meter
 

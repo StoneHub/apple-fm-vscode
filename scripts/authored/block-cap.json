@@ -1,0 +1,209 @@
+{
+  "provenance": "authored",
+  "description": "Deterministic synthetic replies for issue #20. These are not recorded model output or model-quality measurements.",
+  "fixtures": [
+    {
+      "name": "javascript-complete-below-cap",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function longBlock() {\n  const value0 = 0;\n  const value1 = 1;\n  const value2 = 2;\n  const value3 = 3;\n  const value4 = 4;\n  const value5 = 5;\n  const value6 = 6;\n  const value7 = 7;\n  const value8 = 8;\n}",
+      "insertion": "function longBlock() {\n  const value0 = 0;\n  const value1 = 1;\n  const value2 = 2;\n  const value3 = 3;\n  const value4 = 4;\n  const value5 = 5;\n  const value6 = 6;\n  const value7 = 7;\n  const value8 = 8;\n}"
+    },
+    {
+      "name": "ruby-complete-below-cap",
+      "language": "ruby",
+      "source": "<CURSOR>",
+      "raw": "def long_block\n  value_0 = 0\n  value_1 = 1\n  value_2 = 2\n  value_3 = 3\n  value_4 = 4\n  value_5 = 5\n  value_6 = 6\n  value_7 = 7\n  value_8 = 8\nend",
+      "insertion": "def long_block\n  value_0 = 0\n  value_1 = 1\n  value_2 = 2\n  value_3 = 3\n  value_4 = 4\n  value_5 = 5\n  value_6 = 6\n  value_7 = 7\n  value_8 = 8\nend"
+    },
+    {
+      "name": "python-complete-below-cap",
+      "language": "python",
+      "source": "<CURSOR>\npass\n",
+      "raw": "if ready:\n    value = 1",
+      "insertion": "if ready:\n    value = 1"
+    },
+    {
+      "name": "javascript-complete-over-cap",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function longBlock() {\n  const value0 = 0;\n  const value1 = 1;\n  const value2 = 2;\n  const value3 = 3;\n  const value4 = 4;\n  const value5 = 5;\n  const value6 = 6;\n  const value7 = 7;\n  const value8 = 8;\n  const value9 = 9;\n  const value10 = 10;\n}",
+      "insertion": ""
+    },
+    {
+      "name": "javascript-complete-at-cap",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function longBlock() {\n  const value0 = 0;\n  const value1 = 1;\n  const value2 = 2;\n  const value3 = 3;\n  const value4 = 4;\n  const value5 = 5;\n  const value6 = 6;\n  const value7 = 7;\n  const value8 = 8;\n  const value9 = 9;\n}",
+      "insertion": ""
+    },
+    {
+      "name": "ruby-complete-over-cap",
+      "language": "ruby",
+      "source": "<CURSOR>",
+      "raw": "def long_block\n  value_0 = 0\n  value_1 = 1\n  value_2 = 2\n  value_3 = 3\n  value_4 = 4\n  value_5 = 5\n  value_6 = 6\n  value_7 = 7\n  value_8 = 8\n  value_9 = 9\n  value_10 = 10\nend",
+      "insertion": ""
+    },
+    {
+      "name": "ruby-cut-at-cap",
+      "language": "ruby",
+      "source": "<CURSOR>",
+      "raw": "def long_block\n  value_0 = 0\n  value_1 = 1\n  value_2 = 2\n  value_3 = 3\n  value_4 = 4\n  value_5 = 5\n  value_6 = 6\n  value_7 = 7\n  value_8 = 8\n  value_9 = 9\n  value_10 = 10",
+      "insertion": ""
+    },
+    {
+      "name": "javascript-nested-crossing-cap",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function nested() {\n  if (ready) {\n    const nested0 = 0;\n    const nested1 = 1;\n    const nested2 = 2;\n    const nested3 = 3;\n    const nested4 = 4;\n    const nested5 = 5;\n    const nested6 = 6;\n    const nested7 = 7;\n    const nested8 = 8;\n    const nested9 = 9;\n  }\n}",
+      "insertion": ""
+    },
+    {
+      "name": "ruby-nested-crossing-cap",
+      "language": "ruby",
+      "source": "<CURSOR>",
+      "raw": "def nested\n  if ready\n    value_0 = 0\n    value_1 = 1\n    value_2 = 2\n    value_3 = 3\n    value_4 = 4\n    value_5 = 5\n    value_6 = 6\n    value_7 = 7\n    value_8 = 8\n    value_9 = 9\n  end\nend",
+      "insertion": ""
+    },
+    {
+      "name": "complete-prefix-then-unfinished-block",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "const complete = true;\nfunction nested() {\n  if (ready) {\n    const nested0 = 0;\n    const nested1 = 1;\n    const nested2 = 2;\n    const nested3 = 3;\n    const nested4 = 4;\n    const nested5 = 5;\n    const nested6 = 6;\n    const nested7 = 7;\n    const nested8 = 8;\n    const nested9 = 9;",
+      "insertion": ""
+    },
+    {
+      "name": "python-over-cap-suite",
+      "language": "python",
+      "source": "<CURSOR>\npass\n",
+      "raw": "if ready:\n    value_0 = 0\n    value_1 = 1\n    value_2 = 2\n    value_3 = 3\n    value_4 = 4\n    value_5 = 5\n    value_6 = 6\n    value_7 = 7\n    value_8 = 8\n    value_9 = 9\n    value_10 = 10\n    value_11 = 11",
+      "insertion": ""
+    },
+    {
+      "name": "comments-and-strings-below-cap",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function strings() {\n  // { if def end ]\n  const quote = \"} end [\";\n  const template = `text with { and }`;\n  /* end } [ */\n}",
+      "insertion": "function strings() {\n  // { if def end ]\n  const quote = \"} end [\";\n  const template = `text with { and }`;\n  /* end } [ */\n}"
+    },
+    {
+      "name": "comments-and-strings-over-cap",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function strings() {\n  // } end ]\n  const quote0 = \"{ end [\";\n  const quote1 = \"{ end [\";\n  const quote2 = \"{ end [\";\n  const quote3 = \"{ end [\";\n  const quote4 = \"{ end [\";\n  const quote5 = \"{ end [\";\n  const quote6 = \"{ end [\";\n  const quote7 = \"{ end [\";\n  const quote8 = \"{ end [\";\n  /* } end ] */\n}",
+      "insertion": ""
+    },
+    {
+      "name": "blank-lines-count-toward-cap",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function blanks() {\n\n\n\n\n\n\n\n\n\n\n  const value = 1;\n}",
+      "insertion": ""
+    },
+    {
+      "name": "trailing-newline-at-physical-cap",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function longBlock() {\n  const value0 = 0;\n  const value1 = 1;\n  const value2 = 2;\n  const value3 = 3;\n  const value4 = 4;\n  const value5 = 5;\n  const value6 = 6;\n  const value7 = 7;\n  const value8 = 8;\n}\n",
+      "insertion": ""
+    },
+    {
+      "name": "unknown-language-over-cap",
+      "language": "lua",
+      "source": "<CURSOR>",
+      "raw": "function long_block()\n  local value_0 = 0\n  local value_1 = 1\n  local value_2 = 2\n  local value_3 = 3\n  local value_4 = 4\n  local value_5 = 5\n  local value_6 = 6\n  local value_7 = 7\n  local value_8 = 8\n  local value_9 = 9\n  local value_10 = 10\nend",
+      "insertion": ""
+    },
+    {
+      "name": "mid-string-character-limit",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "const complete = true;\nconst text = \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "insertion": ""
+    },
+    {
+      "name": "exact-character-limit",
+      "language": "ruby",
+      "source": "<CURSOR>",
+      "raw": "#xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "insertion": ""
+    },
+    {
+      "name": "normalization-must-not-hide-budget",
+      "language": "javascript",
+      "source": "const echoed = true;\n<CURSOR>",
+      "raw": "const echoed = true;\nfunction longBlock() {\n  const value0 = 0;\n  const value1 = 1;\n  const value2 = 2;\n  const value3 = 3;\n  const value4 = 4;\n  const value5 = 5;\n  const value6 = 6;\n  const value7 = 7;\n  const value8 = 8;\n}",
+      "insertion": ""
+    },
+    {
+      "name": "fence-must-not-hide-budget",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "```javascript\nfunction longBlock() {\n  const value0 = 0;\n  const value1 = 1;\n  const value2 = 2;\n  const value3 = 3;\n  const value4 = 4;\n  const value5 = 5;\n  const value6 = 6;\n  const value7 = 7;\n  const value8 = 8;\n}\n```",
+      "insertion": ""
+    },
+    {
+      "name": "line-mode-unchanged-over-cap",
+      "language": "javascript",
+      "source": "const result = <CURSOR>",
+      "raw": "42;\nextra()\nextra()\nextra()\nextra()\nextra()\nextra()\nextra()\nextra()\nextra()\nextra()\nextra()\nextra()",
+      "insertion": "42;"
+    },
+    {
+      "name": "line-mode-unchanged-over-character-limit",
+      "language": "javascript",
+      "source": "const text = <CURSOR>",
+      "raw": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\";",
+      "insertion": "\"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\";"
+    },
+    {
+      "name": "comment-mode-unchanged-over-cap",
+      "language": "ruby",
+      "source": "# Explain <CURSOR>",
+      "raw": "# Explain the value.\n# more\n# more\n# more\n# more\n# more\n# more\n# more\n# more\n# more\n# more\n# more\n# more",
+      "insertion": "the value."
+    },
+    {
+      "name": "complete-block-below-character-limit",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "const text = \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\";",
+      "insertion": "const text = \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\";"
+    },
+    {
+      "name": "complete-block-at-character-limit",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "const text = \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\";",
+      "insertion": ""
+    },
+    {
+      "name": "ruby-comments-and-strings-below-cap",
+      "language": "ruby",
+      "source": "<CURSOR>",
+      "raw": "def comments\n  # end } [ def\n  \"end } [ def\"\nend",
+      "insertion": "def comments\n  # end } [ def\n  \"end } [ def\"\nend"
+    },
+    {
+      "name": "python-brackets-crossing-cap",
+      "language": "python",
+      "source": "<CURSOR>",
+      "raw": "values = [\n    0,\n    1,\n    2,\n    3,\n    4,\n    5,\n    6,\n    7,\n    8,\n    9,\n    10,\n]",
+      "insertion": ""
+    },
+    {
+      "name": "carriage-returns-must-not-hide-character-limit",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "const text = \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r",
+      "insertion": ""
+    },
+    {
+      "name": "short-crlf-block-unchanged",
+      "language": "javascript",
+      "source": "<CURSOR>",
+      "raw": "function complete() {\r\n  return 1;\r\n}",
+      "insertion": "function complete() {\n  return 1;\n}"
+    }
+  ]
+}

@@ -22,6 +22,7 @@ export class StatusView implements vscode.WebviewViewProvider {
       const config = vscode.workspace.getConfiguration('appleFm');
       if (message?.action === 'ready') this.update();
       else if (message?.action === 'refactor') await vscode.commands.executeCommand('appleFm.refactorSelection');
+      else if (message?.action === 'image') await vscode.commands.executeCommand('appleFm.askAboutImage');
       else if (message?.action === 'enabled' && typeof message.value === 'boolean')
         await vscode.commands.executeCommand(message.value ? 'appleFm.enable' : 'appleFm.disable');
       else if (message?.action === 'automatic' && typeof message.value === 'boolean')
@@ -63,7 +64,7 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;padding:10px;background:var(--vs
 <label><input id="automatic" type="checkbox">Suggest while typing</label>
 <div class="row"><label for="backend">Backend</label><select id="backend"><option value="fm">CLI</option><option value="swift">Swift</option></select></div>
 <div class="row"><label for="scope">Context</label><select id="scope"><option value="nearby">Near cursor</option><option value="currentFile">Current file</option></select></div>
-<div class="actions"><button id="request">Suggest</button><button id="refactor">Refactor selection…</button></div></section>
+<div class="actions"><button id="request">Suggest</button><button id="refactor">Refactor selection…</button><button id="image">Ask about image…</button></div></section>
 <section><h2>Context</h2><p id="contextCapacity" class="muted">Loading…</p>
 <div class="meter" role="img" id="contextMeter" aria-label="Context usage"><span class="inputFill" id="inputFill"></span><span class="outputFill" id="outputFill"></span></div>
 <p id="contextUsage" class="muted">No request yet</p>
@@ -83,8 +84,8 @@ el('inputFill').style.width=cap?Math.min(100,input/cap*100)+'%':'0%';el('outputF
 const text=m.pending?'Measuring…':m.error||((m.promptTokens!==undefined)?input.toLocaleString()+' in + '+output.toLocaleString()+' out · '+Math.round((input+output)/cap*100)+'%':'No request yet');el('contextUsage').textContent=text;el('contextMeter').setAttribute('aria-label',text);el('contextSource').textContent=(m.contextChars??0).toLocaleString()+' / 6,000 source chars';el('sourceMeter').value=m.contextChars??0;
 }
 for(const id of ['enabled','automatic','backend','scope']) el(id).addEventListener('change',()=>api.postMessage({action:id,value:el(id).type==='checkbox'?el(id).checked:el(id).value}));
-for(const id of ['request','refactor']) el(id).addEventListener('click',()=>api.postMessage({action:id}));
-window.addEventListener('message',event=>{const s=event.data;if(s.type!=='state')return;renderMeter(s.meter);el('refactor').disabled=!s.refactor.canCapture;el('requestHeading').textContent=s.refactor.candidates[s.refactor.selected]?'Alternative '+(s.refactor.selected+1):'Latest request';el('enabled').checked=s.enabled;el('automatic').checked=s.automatic;el('backend').value=s.backend;el('scope').value=s.scope;el('phase').textContent=s.phase;el('request').disabled=!s.enabled;const d=s.diagnostics;el('result').textContent=d?(d.status||'Generating…'):'—';el('latency').textContent=d?.durationMs??'—';el('input').textContent=d?.inputChars??'—';el('output').textContent=d?.outputChars??'—';el('reason').textContent=d?.reason||'';el('command').textContent=d?d.model+'\\n\\n'+JSON.stringify(d.argv,null,2):'—';el('prompt').textContent=d?.stdin||'—';});api.postMessage({action:'ready'});
+for(const id of ['request','refactor','image']) el(id).addEventListener('click',()=>api.postMessage({action:id}));
+window.addEventListener('message',event=>{const s=event.data;if(s.type!=='state')return;renderMeter(s.meter);el('refactor').disabled=!s.refactor.canCapture;el('requestHeading').textContent=s.refactor.candidates[s.refactor.selected]?'Alternative '+(s.refactor.selected+1):'Latest request';el('enabled').checked=s.enabled;el('automatic').checked=s.automatic;el('backend').value=s.backend;el('scope').value=s.scope;el('phase').textContent=s.phase;el('request').disabled=!s.enabled;const d=s.diagnostics;el('result').textContent=d?(d.status||'Generating…')+(d.image?' · image '+d.image+' ('+Math.max(1,Math.round(d.imageBytes/1024)).toLocaleString()+' KB)':''):'—';el('latency').textContent=d?.durationMs??'—';el('input').textContent=d?.inputChars??'—';el('output').textContent=d?.outputChars??'—';el('reason').textContent=d?.reason||'';el('command').textContent=d?d.model+'\\n\\n'+JSON.stringify(d.argv,null,2):'—';el('prompt').textContent=d?.stdin||'—';});api.postMessage({action:'ready'});
 </script></body></html>`;
   }
 }

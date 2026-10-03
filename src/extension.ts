@@ -3,7 +3,9 @@ import { ModelMeter } from './modelMeter';
 import { RefactorOverlay } from './refactorOverlay';
 import { RefactorController } from './refactor';
 import { StatusView } from './statusView';
-import { Backend, createBackend } from './backend';
+import { Backend, Diagnostics, createBackend } from './backend';
+import { ImageQuestion } from './imageQuestion';
+import { FM_PATH, ImageBackend } from './imageRunner';
 import { finish, prepare, stopWhen } from './pipeline';
 
 let enabled = true;
@@ -22,6 +24,7 @@ let acceptedTimer: ReturnType<typeof setTimeout> | undefined;
 let panel: StatusView | undefined;
 let refactor: RefactorController;
 let refactorOverlay: RefactorOverlay | undefined;
+let imageQuestion: ImageQuestion | undefined;
 let modelMeter: ModelMeter;
 function refreshPanel() { panel?.update(); refactorOverlay?.update(); }
 
@@ -46,7 +49,7 @@ async function debounce(token: vscode.CancellationToken): Promise<void> {
 }
 class Provider implements vscode.InlineCompletionItemProvider {
   async provideInlineCompletionItems(document: vscode.TextDocument, position: vscode.Position, ctx: vscode.InlineCompletionContext, token: vscode.CancellationToken): Promise<vscode.InlineCompletionItem[]> {
-    if (refactor?.isGenerating || !vscode.window.activeTextEditor?.selection.isEmpty || !enabled || configuring || token.isCancellationRequested || process.platform !== 'darwin' || vscode.env.remoteName || vscode.env.uiKind === vscode.UIKind.Web || isCredential(document)) return [];
+    if (refactor?.isGenerating || imageQuestion?.isGenerating || !vscode.window.activeTextEditor?.selection.isEmpty || !enabled || configuring || token.isCancellationRequested || process.platform !== 'darwin' || vscode.env.remoteName || vscode.env.uiKind === vscode.UIKind.Web || isCredential(document)) return [];
     const automatic = ctx.triggerKind === vscode.InlineCompletionTriggerKind.Automatic;
     if (automatic && !vscode.workspace.getConfiguration('appleFm').get('automaticSuggestions', true)) return [];
     if (automatic && suppressed.has(`${document.uri.toString()}:${position.line}`)) return [];
@@ -93,18 +96,28 @@ export function activate(context: vscode.ExtensionContext): void {
   status.command = 'appleFm.statusView.focus'; status.tooltip = 'Open Apple FM controls and latest request';
   modelMeter = new ModelMeter(`${context.extensionPath}/bin/apple-fm-info`, refreshPanel);
   context.subscriptions.push(modelMeter);
-  refactor = new RefactorController(refreshPanel, async () => { invalidate(); await backend?.dispose(); });
+  // Image requests follow the selected backend; the Swift path uses the same helper as inline completion.
+  const imageBackend = (): ImageBackend => {
+    const cfg = vscode.workspace.getConfiguration('appleFm');
+    return cfg.get<string>('backend', 'fm') === 'swift' ? { kind: 'swift', executable: cfg.get<string>('swiftHelperPath', '') || `${context.extensionPath}/bin/apple-fm-helper` } : { kind: 'fm', executable: FM_PATH };
+  };
+  // One model request at a time: starting a refactor or an image question stops the others.
+  refactor = new RefactorController(refreshPanel, async () => { invalidate(); await Promise.all([imageQuestion?.cancelAndWait(), backend?.dispose()]); }, imageBackend);
   refactorOverlay = new RefactorOverlay(refactor);
-  context.subscriptions.push(refactor, refactorOverlay);
+  imageQuestion = new ImageQuestion(refreshPanel, async () => { invalidate(); await Promise.all([refactor.cancelAndWait(), backend?.dispose()]); }, imageBackend);
+  context.subscriptions.push(refactor, refactorOverlay, imageQuestion);
+  const newer = (a?: Diagnostics, b?: Diagnostics) => (a?.startedAt ?? -1) >= (b?.startedAt ?? -1) ? a ?? b : b;
   panel = new StatusView(() => {
     const cfg = vscode.workspace.getConfiguration('appleFm');
     const refactorState = refactor.snapshot();
-    const diagnostics = refactorState.candidates[refactorState.selected]?.diagnostics ?? backend?.diagnostics();
+    const diagnostics = refactorState.candidates[refactorState.selected]?.diagnostics ?? newer(imageQuestion?.diagnostics(), backend?.diagnostics());
     modelMeter.observe(diagnostics);
     return { enabled, automatic: cfg.get('automaticSuggestions', true), backend: cfg.get('backend', 'fm'), scope: cfg.get('contextScope', 'nearby'),
       phase: !enabled ? 'Paused' : status.text.includes('generating') ? 'Generating' : status.text.includes('accepted') ? 'Accepted' : status.text.includes('ready') ? 'Ready' : 'On', diagnostics, refactor: refactorState, meter: modelMeter.state };
   });
   context.subscriptions.push(vscode.commands.registerCommand('appleFm.refactorSelection', () => refactorOverlay?.start()));
+  context.subscriptions.push(vscode.commands.registerCommand('appleFm.askAboutImage', () => imageQuestion?.ask().catch(error =>
+    void vscode.window.showWarningMessage(error instanceof Error ? error.message : String(error)))));
   context.subscriptions.push(vscode.window.registerWebviewViewProvider('appleFm.statusView', panel));
   context.subscriptions.push(vscode.languages.registerCodeActionsProvider([{ scheme: 'file' }, { scheme: 'untitled' }], {
     provideCodeActions(_document, range) {

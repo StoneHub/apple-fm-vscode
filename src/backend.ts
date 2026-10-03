@@ -4,9 +4,9 @@ export type Request = { id: string; kind: 'editor'; language: string; before: st
 export type Result = { id: string; status: 'ok'|'empty'|'unavailable'|'cancelled'|'error'; insertText?: string; reason?: string };
 // stop, when given, sees the streamed reply so far; returning true ends the request early with that text (CLI backend only).
 export interface Backend { run(request: Request, signal?: AbortSignal, stop?: (text: string) => boolean): Promise<Result>; cancel(): void; dispose(): Promise<void>; diagnostics(): Diagnostics | undefined; }
-export type Diagnostics = { argv: string[]; stdin: string; backend: string; model: string; status?: string; reason?: string; durationMs?: number; firstByteMs?: number; stoppedEarly?: boolean; inputChars: number; outputChars?: number; contextChars?: number; responseText?: string };
-export function clean(text: string): string {
-  const value = text.replace(/^```(?:\w+)?\r?\n/, '').replace(/\r?\n```\s*$/, '').replace(/\r/g, '');
+export type Diagnostics = { argv: string[]; stdin: string; backend: string; model: string; status?: string; reason?: string; durationMs?: number; firstByteMs?: number; stoppedEarly?: boolean; inputChars: number; outputChars?: number; contextChars?: number; responseText?: string; startedAt?: number; image?: string; imageBytes?: number };
+export function clean(text: string, preserveFences = false): string {
+  const value = (preserveFences ? text : text.replace(/^```(?:\w+)?\r?\n/, '').replace(/\r?\n```\s*$/, '')).replace(/\r/g, '');
   return !value || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(value) ? '' : value;
 }
 export function normalizeInsertion(text: string, before: string, after: string): string {
@@ -59,7 +59,7 @@ export class ProcessBackend implements Backend {
     await this.closePromise;
     if (mine !== this.generation || signal?.aborted) return { id: request.id, status: 'cancelled' };
     const prompt = ['Task: complete only the missing insertion at the clearly marked <CURSOR>. Return only text to insert at <CURSOR>; do not repeat the supplied prefix or suffix, add Markdown, explanations, or instructions.', `Language: ${request.language}`, `Text before <CURSOR>:\n${request.before}`, `<CURSOR>\nText after <CURSOR>:\n${request.after}`, request.context ? `Bounded context:\n${request.context}` : ''].filter(Boolean).join('\n\n');
-    const stdin = this.json ? JSON.stringify(request) : prompt; const started = Date.now(); this.last = { argv: [this.executable, ...this.args], stdin, backend: this.json ? 'Swift' : 'CLI', model: 'system · on-device Apple Foundation Model', inputChars: stdin.length, contextChars: request.before.length + request.after.length };
+    const stdin = this.json ? JSON.stringify(request) : prompt; const started = Date.now(); this.last = { argv: [this.executable, ...this.args], stdin, startedAt: started, backend: this.json ? 'Swift' : 'CLI', model: 'system · on-device Apple Foundation Model', inputChars: stdin.length, contextChars: request.before.length + request.after.length };
     const child = spawn(this.executable, this.args, { stdio: ['pipe','pipe','pipe'] }); this.child = child; let out=''; let err=''; let settled=false; let resolveClose!:()=>void;
     this.closePromise = new Promise(resolve => { resolveClose=resolve; });
     return new Promise(resolve => {

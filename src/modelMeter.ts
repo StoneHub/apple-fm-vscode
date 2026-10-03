@@ -17,14 +17,15 @@ export class ModelMeter {
     const revision = ++this.revision;
     this.state = { contextSize: this.state.contextSize, contextChars: d?.contextChars, pending: true };
     const instructionIndex = d?.argv.indexOf('--instructions') ?? -1;
-    const request = d && d.backend === 'CLI' ? { prompt: d.stdin, instructions: instructionIndex >= 0 ? d.argv[instructionIndex + 1] : '', response: d.responseText } : {};
+    // Image requests are not tokenized: the meter cannot measure the image's share of the context.
+    const request = d && d.backend === 'CLI' && !d.image ? { prompt: d.stdin, instructions: instructionIndex >= 0 ? d.argv[instructionIndex + 1] : '', response: d.responseText } : {};
     this.child = execFile(this.helper, [], { timeout: 8000, maxBuffer: 16000 }, (error, stdout) => {
       if (revision !== this.revision) return;
       this.child = undefined;
       try {
         if (error) throw error;
         const result = JSON.parse(stdout);
-        this.state = { ...result, contextChars: d?.contextChars, error: result.error || (d && d.backend !== 'CLI' ? 'Token counts are unavailable for this Swift helper request.' : undefined) };
+        this.state = { ...result, contextChars: d?.contextChars, error: result.error || (d?.image ? 'Token counts are unavailable for image requests.' : d && d.backend !== 'CLI' ? 'Token counts are unavailable for this Swift helper request.' : undefined) };
       } catch { this.state = { contextSize: this.state.contextSize, contextChars: d?.contextChars, error: 'Token measurement unavailable.' }; }
       this.changed();
     });

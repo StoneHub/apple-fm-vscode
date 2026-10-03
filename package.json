@@ -46,6 +46,10 @@
         "title": "Apple FM: Refactor Selection"
       },
       {
+        "command": "appleFm.askAboutImage",
+        "title": "Apple FM: Ask About Image…"
+      },
+      {
         "command": "appleFm.refactor.generate",
         "title": "Generate 3",
         "icon": "$(sparkle)",
@@ -85,6 +89,16 @@
         "command": "appleFm.refactor.close",
         "title": "Close",
         "icon": "$(close)"
+      },
+      {
+        "command": "appleFm.refactor.attachImage",
+        "title": "Attach image…",
+        "icon": "$(file-media)"
+      },
+      {
+        "command": "appleFm.refactor.removeImage",
+        "title": "Remove image",
+        "icon": "$(trash)"
       }
     ],
     "configuration": {
@@ -191,8 +205,18 @@
           "when": "commentController == apple-fm-refactor && commentThread == appleFmBusy"
         },
         {
-          "command": "appleFm.refactor.close",
+          "command": "appleFm.refactor.attachImage",
           "group": "navigation@6",
+          "when": "commentController == apple-fm-refactor && !appleFm.refactorImage && (commentThread == appleFmReady || commentThread == appleFmResults)"
+        },
+        {
+          "command": "appleFm.refactor.removeImage",
+          "group": "navigation@6",
+          "when": "commentController == apple-fm-refactor && appleFm.refactorImage && (commentThread == appleFmReady || commentThread == appleFmResults)"
+        },
+        {
+          "command": "appleFm.refactor.close",
+          "group": "navigation@7",
           "when": "commentController == apple-fm-refactor"
         }
       ],
@@ -227,6 +251,14 @@
         },
         {
           "command": "appleFm.refactor.close",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.attachImage",
+          "when": "false"
+        },
+        {
+          "command": "appleFm.refactor.removeImage",
           "when": "false"
         }
       ]

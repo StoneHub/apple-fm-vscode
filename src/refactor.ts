@@ -2,31 +2,36 @@ import * as vscode from 'vscode';
 import { basename } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { Diagnostics } from './backend';
-import { RefactorRunner } from './refactorRunner';
+import { AttachedImage, FM_PATH, ImageBackend, ImageRunner, checkImage } from './imageRunner';
+import { RefactorResult, RefactorRunner } from './refactorRunner';
 
 type Candidate = { text: string; diagnostics: Diagnostics; duplicate: boolean };
 type Session = {
   id: string; document: vscode.TextDocument; version: number; range: vscode.Range;
   original: string; label: string; instruction: string; candidates: Candidate[];
-  selected: number; applied: boolean;
+  selected: number; applied: boolean; image?: AttachedImage;
 };
 export type RefactorState = {
   id?: string; target?: string; original?: string; instruction: string; busy: boolean;
   progress: string; stale: boolean; applied: boolean; selected: number;
-  candidates: Candidate[]; canCapture: boolean;
+  candidates: Candidate[]; canCapture: boolean; image?: { name: string; bytes: number };
 };
+export const CREDENTIAL_FILE = /(^|\/)(\.env(?:\.[^/]+)?|[^/]+\.(?:pem|key|p12|pfx|secret|secrets)|id_rsa|id_ed25519|credentials)$/i;
 
 // Preview documents and alternatives live only for this extension session.
 export class RefactorController implements vscode.Disposable, vscode.TextDocumentContentProvider {
   private session?: Session;
   private sourceEditor?: vscode.TextEditor;
   private runner = new RefactorRunner();
+  private images = new ImageRunner();
   private abort?: AbortController;
   private previews = new Map<string, string>();
   private progress = '';
   private subscriptions: vscode.Disposable[];
 
-  constructor(private readonly changed: () => void, private readonly beforeGenerate: () => Promise<void>) {
+  // imageBackend picks the CLI or Swift helper for image-guided alternatives; text-only refactors always use the CLI.
+  constructor(private readonly changed: () => void, private readonly beforeGenerate: () => Promise<void>,
+    private readonly imageBackend: () => ImageBackend = () => ({ kind: 'fm', executable: FM_PATH })) {
     this.sourceEditor = vscode.window.activeTextEditor;
     this.subscriptions = [
       vscode.workspace.registerTextDocumentContentProvider('apple-fm-refactor', this),
@@ -62,7 +67,7 @@ export class RefactorController implements vscode.Disposable, vscode.TextDocumen
     const s = this.session;
     return { id: s?.id, target: s?.label, original: s?.original, instruction: s?.instruction ?? 'Improve readability while preserving behavior.',
       busy: this.isGenerating, progress: this.progress, stale: !!s && this.stale(s), applied: s?.applied ?? false,
-      selected: s?.selected ?? 0, candidates: s?.candidates ?? [],
+      selected: s?.selected ?? 0, candidates: s?.candidates ?? [], image: s?.image && { name: s.image.name, bytes: s.image.bytes },
       canCapture: !!this.sourceEditor && !this.sourceEditor.selection.isEmpty && !this.sourceEditor.document.isClosed };
   }
 
@@ -72,7 +77,7 @@ export class RefactorController implements vscode.Disposable, vscode.TextDocumen
       throw new Error('Highlight code in a local editor, then choose Refactor Selection.');
     if (process.platform !== 'darwin' || vscode.env.remoteName || vscode.env.uiKind === vscode.UIKind.Web)
       throw new Error('Selection refactoring requires a local Mac window.');
-    if (/(^|\/)(\.env(?:\.[^/]+)?|[^/]+\.(?:pem|key|p12|pfx|secret|secrets)|id_rsa|id_ed25519|credentials)$/i.test(editor.document.uri.fsPath))
+    if (CREDENTIAL_FILE.test(editor.document.uri.fsPath))
       throw new Error('Refactoring is unavailable for credential files.');
     const original = editor.document.getText(editor.selection);
     if (!original.trim()) throw new Error('Highlight a nonempty section of code.');
@@ -101,11 +106,15 @@ export class RefactorController implements vscode.Disposable, vscode.TextDocumen
     const abort = new AbortController(); this.abort = abort;
     try {
       await this.beforeGenerate();
+      // Stop can resolve before child closure; an image/text switch must wait for both runners.
+      await Promise.all([this.runner.cancelAndWait(), this.images.cancelAndWait()]);
       for (let i = 0; i < count; i++) {
         if (abort.signal.aborted || this.session !== s || this.stale(s)) break;
         this.progress = `Generating ${i + 1} of ${count}…`;
         this.changed();
-        const result = await this.runner.run({ language: s.document.languageId, original: s.original, instruction, variant: s.candidates.length + 1 }, abort.signal);
+        const variant = s.candidates.length + 1;
+        const result = s.image ? await this.imageAlternative(s, s.image, instruction, variant, abort.signal)
+          : await this.runner.run({ language: s.document.languageId, original: s.original, instruction, variant }, abort.signal);
         if (abort.signal.aborted || this.session !== s || this.stale(s)) break;
         const duplicate = result.text === s.original || s.candidates.some(c => c.text === result.text);
         s.candidates.push({ ...result, duplicate });
@@ -121,7 +130,28 @@ export class RefactorController implements vscode.Disposable, vscode.TextDocumen
     }
   }
 
-  cancel(): void { this.abort?.abort(); this.runner.cancel(); }
+  private async imageAlternative(s: Session, image: AttachedImage, instruction: string, variant: number, signal: AbortSignal): Promise<RefactorResult> {
+    const result = await this.images.run({ image: image.path, task: 'refactor', text: instruction, code: s.original, language: s.document.languageId, variant }, this.imageBackend(), signal);
+    if (result.status === 'ok') return { text: result.text!, diagnostics: result.diagnostics };
+    throw new Error(result.status === 'cancelled' ? 'Refactor request cancelled' : result.status === 'empty' ? 'Refactor returned empty output' : result.reason ?? `Image request ${result.status}`);
+  }
+  // Attaching or removing the reference image starts a fresh set of alternatives, like a new instruction.
+  attachImage(path: string | undefined): void {
+    const s = this.session;
+    if (!s || this.stale(s) || s.applied) throw new Error('Capture a fresh selection before changing the image.');
+    if (this.isGenerating) throw new Error('Stop generating before changing the image.');
+    const image = path === undefined ? undefined : checkImage(path);
+    if (!image && !s.image) return;
+    s.image = image; s.candidates = []; s.selected = 0; this.progress = 'Ready';
+    this.changed();
+  }
+  removeImage(): void { this.attachImage(undefined); }
+
+  cancel(): void { this.abort?.abort(); this.runner.cancel(); this.images.cancel(); }
+  async cancelAndWait(): Promise<void> {
+    this.abort?.abort();
+    await Promise.all([this.runner.cancelAndWait(), this.images.cancelAndWait()]);
+  }
   select(index: number): void {
     if (Number.isInteger(index) && this.session?.candidates[index] && this.session.selected !== index) { this.session.selected = index; this.changed(); }
   }
@@ -156,5 +186,5 @@ export class RefactorController implements vscode.Disposable, vscode.TextDocumen
       else if (message.action === 'refactorApply') await this.apply();
     } catch (error) { void vscode.window.showWarningMessage(error instanceof Error ? error.message : String(error)); }
   }
-  dispose(): void { this.cancel(); void this.runner.dispose(); this.subscriptions.forEach(s => s.dispose()); this.previews.clear(); }
+  dispose(): void { this.cancel(); void this.runner.dispose(); void this.images.dispose(); this.subscriptions.forEach(s => s.dispose()); this.previews.clear(); }
 }

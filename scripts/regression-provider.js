@@ -56,11 +56,13 @@ const backend = {
   cancel() { this.cancels++; }, async dispose() {}, diagnostics() { return undefined; }
 };
 const realBackend = require('../dist/backend');
+let imageQuestion;
 const stubs = {
   './backend': { ...realBackend, createBackend: () => backend },
   './modelMeter': { ModelMeter: class { constructor() { this.state = {}; } observe() {} dispose() {} } },
   './refactor': { RefactorController: class { constructor() { this.isGenerating = false; } snapshot() { return { candidates: [], selected: 0 }; } dispose() {} } },
   './refactorOverlay': { RefactorOverlay: class { update() {} start() {} dispose() {} } },
+  './imageQuestion': { ImageQuestion: class { constructor() { this.isGenerating = false; imageQuestion = this; } diagnostics() {} cancel() {} async ask() {} dispose() {} } },
   './statusView': { StatusView: class { update() {} } }
 };
 Module._load = function (name, parent, isMain) {
@@ -201,6 +203,12 @@ Object.defineProperty(process, 'platform', { value: 'darwin' }); // The Provider
   vscode.env.uiKind = vscode.UIKind.Desktop;
   await served(document, position, EXPLICIT, "'test';", 'local desktop window after remote and web');
 
+  // While an explicit image question runs, it alone uses the model.
+  imageQuestion.isGenerating = true;
+  await refused(document, position, EXPLICIT, 'image question running');
+  imageQuestion.isGenerating = false;
+  await served(document, position, EXPLICIT, "'test';", 'after the image question');
+
   // After an accepted suggestion, automatic requests on that line stop; explicit ones and other lines still work.
   document = open('total = \nlater = ', 'python');
   position = endOf(document);
@@ -275,5 +283,5 @@ Object.defineProperty(process, 'platform', { value: 'darwin' }); // The Provider
 
   Object.defineProperty(process, 'platform', platform);
   finished = true;
-  console.log(`provider regressions: PASS (${backend.calls.length} backend calls: explicit, debounce, cancellation, selection, credentials, remote/web, accepted line, semicolons, automatic setting, stale results)`);
+  console.log(`provider regressions: PASS (${backend.calls.length} backend calls: explicit, debounce, cancellation, selection, credentials, remote/web, image question, accepted line, semicolons, automatic setting, stale results)`);
 })().catch(error => { console.error(error); process.exitCode = 1; });

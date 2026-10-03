@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { RefactorController } from './refactor';
+import { pickImage } from './imageQuestion';
 
 // Native editor-anchored UI. No Quick Pick or separate diff editor is involved.
 export class RefactorOverlay implements vscode.Disposable {
@@ -8,6 +9,7 @@ export class RefactorOverlay implements vscode.Disposable {
   private starting = false;
   private showChanges = true;
   private lastBody = '';
+  private imageAttached = false;
   private readonly subscriptions: vscode.Disposable[] = [];
 
   constructor(private readonly controller: RefactorController) {
@@ -27,6 +29,12 @@ export class RefactorOverlay implements vscode.Disposable {
     command('toggleChanges', () => { this.showChanges = !this.showChanges; this.lastBody = ''; this.update(); });
     command('apply', async () => { await this.controller.apply(); if (this.controller.snapshot().applied) this.close(); });
     command('stop', () => this.controller.cancel());
+    command('attachImage', async () => {
+      if (!this.thread || this.controller.isGenerating) return;
+      const path = await pickImage('Apple FM: attach a visual reference for this refactor', 'Attach image');
+      if (path && this.thread) this.controller.attachImage(path);
+    });
+    command('removeImage', () => this.controller.removeImage());
     command('close', () => this.close());
   }
 
@@ -59,9 +67,12 @@ export class RefactorOverlay implements vscode.Disposable {
     const candidate = s.candidates[s.selected];
     this.thread.contextValue = s.stale ? 'appleFmStale' : s.busy ? 'appleFmBusy' : candidate ? 'appleFmResults' : 'appleFmReady';
     this.thread.canReply = !s.busy && !s.stale;
-    this.thread.label = s.stale ? 'Apple FM · Selection changed' : s.busy ? `Apple FM · ${s.progress}` : candidate ? `Apple FM · ${s.selected + 1} / ${s.candidates.length}` : 'Apple FM · Refactor';
+    this.thread.label = (s.stale ? 'Apple FM · Selection changed' : s.busy ? `Apple FM · ${s.progress}` : candidate ? `Apple FM · ${s.selected + 1} / ${s.candidates.length}` : 'Apple FM · Refactor')
+      + (s.image && !s.stale ? ` · image: ${s.image.name}` : '');
+    if (!!s.image !== this.imageAttached) { this.imageAttached = !!s.image; void vscode.commands.executeCommand('setContext', 'appleFm.refactorImage', this.imageAttached); }
     const body = new vscode.MarkdownString();
     body.isTrusted = false; body.supportHtml = false;
+    if (s.image && !s.stale) body.appendText(`Image attached: ${s.image.name} (${Math.max(1, Math.round(s.image.bytes / 1024)).toLocaleString()} KB), sent to the on-device model as untrusted visual reference.\n`);
     if (s.stale) body.appendText('Select the code again to continue.');
     else if (candidate) {
       const language = this.controller.target()?.document.languageId ?? '';
@@ -79,6 +90,7 @@ export class RefactorOverlay implements vscode.Disposable {
 
   private close(): void {
     this.controller.cancel(); this.thread?.dispose(); this.thread = undefined; this.lastBody = '';
+    if (this.imageAttached) { this.imageAttached = false; void vscode.commands.executeCommand('setContext', 'appleFm.refactorImage', false); }
   }
   private report(error: unknown): void { void vscode.window.showWarningMessage(error instanceof Error ? error.message : String(error)); }
   dispose(): void { this.close(); this.subscriptions.forEach(s => s.dispose()); this.comments.dispose(); }

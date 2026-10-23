@@ -86,3 +86,15 @@ gh release create "v$(node -p "require('./package.json').version")" release/* --
 ## Cloud task preparation
 
 See [cloud work](docs/CLOUD-WORK.md) for supported runner checks, task boundaries and local acceptance gates.
+
+## Apple FM and Safari projects
+
+These projects work independently and share optional local integrations:
+
+- [Apple FM Swift](https://github.com/StoneHub/apple-fm-swift): native on-device FoundationModels library and helper.
+- [Apple FM Terminal](https://github.com/StoneHub/apple-fm-terminal): request-only shell assistance with reviewed insertion and separate execution.
+- [Apple FM VS Code](https://github.com/StoneHub/apple-fm-vscode): local inline suggestions, refactors and explicit image questions.
+- [Safari Agent](https://github.com/StoneHub/safari-agent): agent browser tools with explicit tab access and an optional read-only Apple FM client.
+- [Android OTP for Safari](https://github.com/StoneHub/android-otp-for-safari): a separate Android-to-Safari verification-code workflow.
+
+Read each repository's requirements and release notes before installing. Public source, downloadable artifacts, signing/notarization and successful installation are separate milestones. The [showcase concept](https://github.com/StoneHub/safari-agent/blob/main/docs/showcase-concept.md) proposes a shared directory; no new hosted site is implied.
